@@ -75,6 +75,10 @@ final class RadioAudio {
 
     func startInput(device: AudioDevice, channel: Int) throws {
         stopInput()
+        guard let current = Devices.list().first(where: { $0.uid == device.uid && $0.inputs > 0 }) else {
+            throw AudioFailure.message("Selected USB input is unavailable. Reconnect it and refresh devices.")
+        }
+        let device = current
         guard channel >= 0, channel < device.inputs else { throw AudioFailure.message("Select an available input channel") }
         inputChannels = device.inputs
         selectedChannel = channel

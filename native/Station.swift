@@ -184,6 +184,7 @@ final class LiveStation: ObservableObject {
     }
     func startMonitor() {
         guard !monitoring, !transmitting else { return }
+        refresh()
         guard let device = devices.first(where: { $0.uid == settings.inputUID && $0.inputs > 0 }) else { failure = "Select an audio input device"; return }
         guard validAudioSettings() else { return }
         let permission = AVCaptureDevice.authorizationStatus(for: .audio)

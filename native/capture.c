@@ -60,7 +60,7 @@ void *jw_capture_open(uint32_t device_id, const char *name, int channels, double
     PaStreamParameters parameters = {selected, channels, paFloat32, info->defaultHighInputLatency, NULL};
     result = Pa_OpenStream(&state->stream, &parameters, NULL, rate, 512, paNoFlag, receive_audio, state);
     if (result == paNoError && PaMacCore_GetStreamInputDevice(state->stream) != device_id) {
-        snprintf(error, 512, "Input device changed. Refresh audio devices and select it again.");
+        snprintf(error, 512, "USB input routing mismatch: requested %s (device %u), PortAudio opened device %u. Capture stopped; no microphone fallback.", name, device_id, PaMacCore_GetStreamInputDevice(state->stream));
         Pa_CloseStream(state->stream); free(state); Pa_Terminate(); return NULL;
     }
     if (result == paNoError) result = Pa_StartStream(state->stream);
