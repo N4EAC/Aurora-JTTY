@@ -2,6 +2,50 @@
 import SwiftUI
 import AppKit
 
+// Preliminary dial presets from DXZone, updated September 25, 2026.
+struct JTTYDialPreset: Identifiable {
+    let band: String
+    let mhz: Double
+    var id: String { band }
+    static let all: [JTTYDialPreset] = [
+        .init(band: "160 m", mhz: 1.838), .init(band: "80 m", mhz: 3.575),
+        .init(band: "40 m", mhz: 7.090), .init(band: "30 m", mhz: 10.140),
+        .init(band: "20 m", mhz: 14.090), .init(band: "17 m", mhz: 18.100),
+        .init(band: "15 m", mhz: 21.090), .init(band: "12 m", mhz: 24.920),
+        .init(band: "10 m", mhz: 28.090), .init(band: "6 m", mhz: 50.160),
+        .init(band: "2 m", mhz: 144.160)
+    ]
+}
+
+struct JTTYFrequencyControls: View {
+    @ObservedObject var station: LiveStation
+    private var presetLabel: String {
+        if let preset = JTTYDialPreset.all.first(where: { abs($0.mhz - station.settings.dialMHz) < 0.0000005 }) {
+            return String(format: "%@ · %.3f MHz", preset.band, preset.mhz)
+        }
+        return "Custom frequency"
+    }
+    var body: some View {
+        HStack {
+            Menu("JTTY: " + presetLabel) {
+                ForEach(JTTYDialPreset.all) { preset in
+                    Button(String(format: "%@ · %.3f MHz%@", preset.band, preset.mhz,
+                                  preset.mhz > 60 ? " (outside FT-710 range)" : "")) {
+                        station.settings.dialMHz = preset.mhz
+                        station.settings.dataMode = true
+                        station.save()
+                    }.disabled(preset.mhz > 60)
+                }
+            }.frame(width: 235)
+            Text("Dial MHz")
+            TextField("14.090", value: $station.settings.dialMHz, format: .number.precision(.fractionLength(3...6))).frame(width: 110)
+            Toggle("Data USB", isOn: $station.settings.dataMode)
+            Button("Apply Frequency / Mode") { station.applyFrequency() }.disabled(!station.connected)
+        }.disabled(station.transmitting || station.radioPTT)
+        Text("Preliminary presets · Select, then Apply to tune the radio").font(.caption).foregroundStyle(.secondary)
+    }
+}
+
 struct StationRootView: View {
     @ObservedObject var station: LiveStation
     var body: some View {
@@ -25,6 +69,7 @@ struct ConversationView: View {
                 Text(station.radioMode).foregroundStyle(.secondary)
                 Text(station.radioPTT ? "PTT ON" : "RX").foregroundStyle(station.radioPTT ? .red : .green)
             }
+            JTTYFrequencyControls(station: station)
             HStack {
                 Button(station.monitoring ? "Stop Monitor" : "Monitor") { if station.monitoring { station.stopMonitor() } else { station.startMonitor() } }.disabled(station.transmitting)
                 Text("Input").font(.caption)
@@ -212,10 +257,12 @@ struct StationSetupView: View {
                     HStack {
                         TextField("My callsign", text: $station.settings.myCall).frame(width: 150)
                         TextField("My grid", text: $station.settings.myGrid).frame(width: 100)
-                        Text("Dial MHz"); TextField("14.090", value: $station.settings.dialMHz, format: .number.precision(.fractionLength(3...6))).frame(width: 110)
-                        Toggle("Data USB", isOn: $station.settings.dataMode)
-                        Button("Apply Frequency / Mode") { station.applyFrequency() }.disabled(!station.connected || station.transmitting || station.radioPTT)
+                        Spacer()
                     }.padding(8).disabled(station.transmitting)
+                    VStack(alignment: .leading) {
+                        JTTYFrequencyControls(station: station)
+                        Link("JTTY frequency reference (DXZone)", destination: URL(string: "https://www.dxzone.com/jtty-frequencies/")!).font(.caption)
+                    }.padding(8)
                 }
                 DisclosureGroup("Edit F1–F8 messages") {
                     ForEach(0..<8, id: \.self) { index in
