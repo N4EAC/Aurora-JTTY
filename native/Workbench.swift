@@ -154,6 +154,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     let station = LiveStation()
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let icon = Bundle.main.url(forResource: "JTTY", withExtension: "icns"),
+           let image = NSImage(contentsOf: icon) {
+            NSApp.applicationIconImage = image
+        }
         let menu = NSMenu()
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About JTTY Workbench", action: #selector(showAbout), keyEquivalent: "")

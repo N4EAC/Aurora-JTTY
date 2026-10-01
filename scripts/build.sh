@@ -10,4 +10,5 @@ if [ "$(uname -s)" = Darwin ]; then
   mkdir -p "$TASK_ROOT/build/JTTY Workbench.app/Contents/Resources"
   cp "$TASK_ROOT/native/Assets/JTTY.icns" "$TASK_ROOT/build/JTTY Workbench.app/Contents/Resources/JTTY.icns"
   cp "$TASK_ROOT/native/Info.plist" "$TASK_ROOT/build/JTTY Workbench.app/Contents/Info.plist"
+  touch "$TASK_ROOT/build/JTTY Workbench.app"
 fi

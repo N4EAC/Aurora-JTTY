@@ -3,9 +3,10 @@
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>JTTYWorkbench</string>
 <key>CFBundleIdentifier</key><string>local.jttyworkbench.prototype</string>
-<key>CFBundleIconFile</key><string>JTTY</string>
+<key>CFBundleIconFile</key><string>JTTY.icns</string>
 <key>CFBundleName</key><string>JTTY Workbench</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleVersion</key><string>2</string>
 <key>CFBundleShortVersionString</key><string>0.2.0</string>
 <key>NSMicrophoneUsageDescription</key><string>Receive JTTY signals from your selected radio USB audio input.</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
