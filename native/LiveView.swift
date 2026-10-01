@@ -70,6 +70,8 @@ struct ConversationView: View {
                 Text(station.radioPTT ? "PTT ON" : "RX").foregroundStyle(station.radioPTT ? .red : .green)
             }
             JTTYFrequencyControls(station: station)
+            Text(station.monitoring ? "Receiving: " + station.activeInput : "Selected input: " + (station.devices.first(where: { $0.uid == station.settings.inputUID })?.name ?? "Choose in Station Setup"))
+                .font(.caption).foregroundStyle(.secondary)
             HStack {
                 Button(station.monitoring ? "Stop Monitor" : "Monitor") { if station.monitoring { station.stopMonitor() } else { station.startMonitor() } }.disabled(station.transmitting)
                 Text("Input").font(.caption)

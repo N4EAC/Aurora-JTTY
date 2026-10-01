@@ -99,6 +99,7 @@ final class LiveStation: ObservableObject {
     @Published var ports: [String] = []
     @Published var connected = false
     @Published var connecting = false
+    @Published var activeInput = ""
     @Published var monitoring = false
     @Published var transmitEnabled = false
     @Published var transmitting = false
@@ -196,10 +197,10 @@ final class LiveStation: ObservableObject {
         monitorEpoch = UUID().uuidString; monitorStarted = Date()
         let epoch = monitorEpoch
         audio.onSamples = { [weak self] samples, peak, spectrum in self?.receive(samples, peak: peak, spectrum: spectrum, epoch: epoch) }
-        do { try audio.startInput(device: device, channel: settings.inputChannel); monitoring = true; failure = ""; status = "Receiving from \(device.name)"; save() }
+        do { try audio.startInput(device: device, channel: settings.inputChannel); activeInput = "\(device.name) · channel \(settings.inputChannel + 1)"; monitoring = true; failure = ""; status = "Receiving from \(device.name)"; save() }
         catch { failure = error.localizedDescription }
     }
-    func stopMonitor() { monitoring = false; monitorEpoch = UUID().uuidString; audio.stopInput(); peak = 0 }
+    func stopMonitor() { monitoring = false; activeInput = ""; monitorEpoch = UUID().uuidString; audio.stopInput(); peak = 0 }
     func validAudioSettings() -> Bool {
         guard settings.tone.isFinite, (200...2600).contains(settings.tone), settings.tolerance.isFinite, (1...1000).contains(settings.tolerance), settings.txGain.isFinite, (0...1).contains(settings.txGain), (0...2000).contains(settings.leadMS), (0...2000).contains(settings.tailMS) else { failure = "Check audio frequency, tolerance, gain and PTT timing values."; return false }
         return true

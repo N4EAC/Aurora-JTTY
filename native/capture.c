@@ -64,6 +64,12 @@ void *jw_capture_open(uint32_t device_id, const char *name, int channels, double
         Pa_CloseStream(state->stream); free(state); Pa_Terminate(); return NULL;
     }
     if (result == paNoError) result = Pa_StartStream(state->stream);
+    if (result == paNoError && PaMacCore_GetStreamInputDevice(state->stream) != device_id) {
+        snprintf(error, 512, "Capture started on an unexpected device; monitoring stopped. Select the USB input again.");
+        atomic_store(&state->active, 0);
+        Pa_AbortStream(state->stream); Pa_CloseStream(state->stream);
+        free(state); Pa_Terminate(); return NULL;
+    }
     if (result != paNoError) {
         report_error(error, "Start PortAudio input", result);
         atomic_store(&state->active, 0);
