@@ -62,8 +62,7 @@ enum Devices {
 }
 
 final class RadioAudio {
-    private let inputLock = NSLock()
-    private var input: AudioQueueRef?
+    private var input: UnsafeMutableRawPointer?
     private var output: AudioQueueRef?
     private var converter: AVAudioConverter?
     private var sourceFormat: AVAudioFormat?
@@ -82,50 +81,19 @@ final class RadioAudio {
         let target = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 12000, channels: 1, interleaved: false)!
         converter = AVAudioConverter(from: sourceFormat!, to: target)
         guard converter != nil else { throw AudioFailure.message("Cannot convert this audio device to 12 kHz") }
-        var format = AudioStreamBasicDescription(mSampleRate: device.rate, mFormatID: kAudioFormatLinearPCM,
-            mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked, mBytesPerPacket: UInt32(4 * inputChannels),
-            mFramesPerPacket: 1, mBytesPerFrame: UInt32(4 * inputChannels), mChannelsPerFrame: UInt32(inputChannels), mBitsPerChannel: 32, mReserved: 0)
-        var queue: AudioQueueRef?
-        try audioCheck(AudioQueueNewInput(&format, { context, queue, buffer, _, _, _ in
-            guard let context = context else { return }
-            let owner = Unmanaged<RadioAudio>.fromOpaque(context).takeUnretainedValue()
-            owner.capture(queue: queue, buffer: buffer)
-        }, Unmanaged.passUnretained(self).toOpaque(), nil, nil, 0, &queue), "Create input")
-        inputLock.lock(); input = queue; inputLock.unlock()
-        do {
-            let string = device.uid as CFString
-            var uid = Unmanaged.passUnretained(string).toOpaque()
-            try audioCheck(AudioQueueSetProperty(queue!, kAudioQueueProperty_CurrentDevice, &uid, UInt32(MemoryLayout<UnsafeRawPointer>.size)), "Select input device")
-            for _ in 0..<3 {
-                var buffer: AudioQueueBufferRef?
-                try audioCheck(AudioQueueAllocateBuffer(queue!, UInt32(2048 * 4 * inputChannels), &buffer), "Allocate input buffer")
-                try audioCheck(AudioQueueEnqueueBuffer(queue!, buffer!, 0, nil), "Queue input")
-            }
-            let start = AudioQueueStart(queue!, nil)
-            if start == kAudioQueueErr_CannotStart {
-                throw AudioFailure.message("Cannot start input on \(device.name) (CoreAudio \(start)). Stop audio in other applications, reconnect the USB device, refresh devices and retry. Check macOS microphone permission for JTTY Workbench.")
-            }
-            try audioCheck(start, "Start input on \(device.name)")
-        } catch { stopInput(); throw error }
-    }
-
-    private func capture(queue: AudioQueueRef, buffer: AudioQueueBufferRef) {
-        // Mark the queue inactive before stopping it. Stop/Dispose can invoke callbacks;
-        // those callbacks must neither process flushed data nor re-enqueue a buffer.
-        inputLock.lock()
-        guard input == queue else { inputLock.unlock(); return }
-        let count = Int(buffer.pointee.mAudioDataByteSize) / MemoryLayout<Float>.size
-        let data = Array(UnsafeBufferPointer(start: buffer.pointee.mAudioData.assumingMemoryBound(to: Float.self), count: count))
-        processing.async { self.consume(data) }
-        let status = AudioQueueEnqueueBuffer(queue, buffer, 0, nil)
-        inputLock.unlock()
-        if status != noErr {
-            processing.async {
-                self.inputLock.lock()
-                let active = self.input == queue
-                self.inputLock.unlock()
-                if active { self.onError?("Audio input buffer failed (\(status))") }
-            }
+        var error = [CChar](repeating: 0, count: 512)
+        input = device.name.withCString { name in
+            jw_capture_open(device.id, name, Int32(inputChannels), device.rate, { samples, count, context in
+                guard let samples = samples, let context = context else { return }
+                let owner = Unmanaged<RadioAudio>.fromOpaque(context).takeUnretainedValue()
+                // PortAudio owns the callback buffer; copy before returning to its thread.
+                let copy = Array(UnsafeBufferPointer(start: samples, count: Int(count)))
+                owner.processing.async { owner.consume(copy) }
+            }, Unmanaged.passUnretained(self).toOpaque(), &error)
+        }
+        guard input != nil else {
+            stopInput()
+            throw AudioFailure.message(String(cString: error))
         }
     }
 
@@ -205,12 +173,10 @@ final class RadioAudio {
         if let queue = output { AudioQueueStop(queue, true); AudioQueueDispose(queue, true); output = nil }
     }
     func stopInput() {
-        inputLock.lock()
-        let queue = input
+        let capture = input
         input = nil
-        inputLock.unlock()
-        // Never hold inputLock while CoreAudio waits for the callback to return.
-        if let queue = queue { AudioQueueStop(queue, true); AudioQueueDispose(queue, true) }
+        // PortAudio waits for callbacks before releasing the capture context.
+        if let capture = capture { jw_capture_close(capture) }
         processing.sync { converter = nil; sourceFormat = nil }
     }
     // Exercise the exact channel-selection and streaming conversion path without microphone access.

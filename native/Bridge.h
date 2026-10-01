@@ -11,3 +11,7 @@ int jw_radio_ptt(void *radio, int on, double limit_seconds);
 int jw_radio_close(void *radio);
 int jw_radio_watchdog(void *radio);
 const char *jw_radio_error(int code);
+
+typedef void (*jw_capture_callback)(const float *samples, int count, void *context);
+void *jw_capture_open(uint32_t device_id, const char *name, int channels, double rate, jw_capture_callback callback, void *context, char *error);
+void jw_capture_close(void *capture);
