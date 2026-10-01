@@ -1,12 +1,25 @@
 // Exercise native channel selection, sample-rate conversion and silent output.
 import Foundation
 import AVFoundation
+import CoreAudio
 
 @main
 enum AudioHarness {
     static func main() throws {
         if CommandLine.arguments.contains("--list") {
             for device in Devices.list() { print("\(device.id)\t\(device.name)\tinput=\(device.inputs) output=\(device.outputs) rate=\(device.rate)") }
+            return
+        }
+        if CommandLine.arguments.contains("--diagnose-usb") {
+            for device in Devices.list().filter({ $0.name.localizedCaseInsensitiveContains("USB") }) {
+                print("USB id=\(device.id) uid=\(device.uid)")
+                for (name, selector) in [("alive", kAudioDevicePropertyDeviceIsAlive), ("running", kAudioDevicePropertyDeviceIsRunningSomewhere), ("hogPID", kAudioDevicePropertyHogMode)] {
+                    var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+                    var value: Int32 = -999, bytes: UInt32 = 4
+                    let result = AudioObjectGetPropertyData(device.id, &address, 0, nil, &bytes, &value)
+                    print("\(name)=\(value), status=\(result)")
+                }
+            }
             return
         }
         if CommandLine.arguments.contains("--usb-capture") {
