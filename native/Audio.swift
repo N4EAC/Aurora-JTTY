@@ -63,6 +63,7 @@ enum Devices {
 
 final class RadioAudio {
     private var input: UnsafeMutableRawPointer?
+    private var routeTimer: Timer?
     private var output: AudioQueueRef?
     private var converter: AVAudioConverter?
     private var sourceFormat: AVAudioFormat?
@@ -94,6 +95,31 @@ final class RadioAudio {
         guard input != nil else {
             stopInput()
             throw AudioFailure.message(String(cString: error))
+        }
+        routeTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            self?.verifyInputRoute(expected: device.id)
+        }
+    }
+
+    private func verifyInputRoute(expected: AudioDeviceID) {
+        guard input != nil else { return }
+        if #available(macOS 14.2, *) {
+            var pid = getpid(), process: AudioObjectID = 0
+            var size = UInt32(MemoryLayout<AudioObjectID>.size)
+            var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyTranslatePIDToProcessObject,
+                mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+            guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address,
+                UInt32(MemoryLayout<pid_t>.size), &pid, &size, &process) == noErr, process != 0 else { return }
+            address.mSelector = kAudioProcessPropertyDevices
+            address.mScope = kAudioObjectPropertyScopeInput
+            guard AudioObjectGetPropertyDataSize(process, &address, 0, nil, &size) == noErr, size > 0 else { return }
+            var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
+            guard AudioObjectGetPropertyData(process, &address, 0, nil, &size, &ids) == noErr else { return }
+            if ids.contains(where: { $0 != expected }) {
+                let names = Devices.list().filter { ids.contains($0.id) }.map(\.name).joined(separator: ", ")
+                stopInput()
+                onError?("macOS changed the capture source to \(names). Monitoring stopped. In the menu-bar audio controls for JTTY Workbench, select Standard Mic Mode and USB Audio Device, then retry Monitor.")
+            }
         }
     }
 
@@ -173,6 +199,7 @@ final class RadioAudio {
         if let queue = output { AudioQueueStop(queue, true); AudioQueueDispose(queue, true); output = nil }
     }
     func stopInput() {
+        routeTimer?.invalidate(); routeTimer = nil
         let capture = input
         input = nil
         // PortAudio waits for callbacks before releasing the capture context.

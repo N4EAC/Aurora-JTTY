@@ -38,7 +38,7 @@ enum AudioHarness {
             for channel in 0..<device.inputs {
                 for _ in 0..<3 {
                     try audio.startInput(device: device, channel: channel)
-                    RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+                    RunLoop.main.run(until: Date().addingTimeInterval(3.0))
                     audio.stopInput()
                 }
             }
