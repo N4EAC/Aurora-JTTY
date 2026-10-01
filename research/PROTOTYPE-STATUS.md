@@ -14,3 +14,5 @@ No FT-710 serial or USB audio device was visible. Actual hardware CAT/PTT, micro
 The app is a local developer bundle requiring its build-folder location and external Homebrew libraries. Packaging, notarization and installation on another Mac remain future work. A process-local PTT watchdog cannot cover forced termination or a disconnected cable.
 
 The upstream protocol is unchanged. Complete marks receipt of an end marker, not a guarantee against false decodes. Future upstream protocol changes may require updating the pinned source.
+
+Receive troubleshooting update: fixed an input callback race that attempted to enqueue during AudioQueueStop/Dispose (-66632). All 21 existing automated tests and native conversion passed afterward. A connected USB Audio Device (one input, two outputs, 48 kHz) was detected, but a receive-only start/stop hardware test failed at Start input (-66681); CoreAudio logged server start failures and a timeout. Real receive capture therefore remains unverified. No output or PTT was used in this test.

@@ -34,3 +34,7 @@ JTTY is absent from the [ADIF 3.1.7 mode list](https://adif.org.uk/317/ADIF_317.
 ## Current validation limits
 
 The encoder/decoder, native sample-rate conversion, transmit queue, Hamlib dummy CAT/PTT, cancellation and timed release have been tested. The FT-710 USB devices were unavailable during development, so real CAT commands, USB capture, modulation levels and a two-station contact remain to be checked. The watchdog cannot release PTT if the process is forcibly killed or the control cable fails; use the radio's own controls in that situation.
+
+## USB receive troubleshooting
+
+CAT and USB audio are separate devices. Select **USB Audio Device** as input and channel 1, then press Monitor. If CoreAudio cannot start input, stop audio monitoring in WSJT-X/fldigi, reconnect the radio's USB cable, refresh devices and retry. Check JTTY Workbench under macOS Privacy & Security → Microphone. A buffer error -66632 during stopping was an app callback race, corrected in the updated build; quit and reopen the app to load that fix. If monitoring runs but the meter remains silent, check the radio's USB OUT LEVEL and selected audio source.

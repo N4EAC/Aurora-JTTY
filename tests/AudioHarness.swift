@@ -1,11 +1,38 @@
 // Exercise native channel selection, sample-rate conversion and silent output.
 import Foundation
+import AVFoundation
 
 @main
 enum AudioHarness {
     static func main() throws {
         if CommandLine.arguments.contains("--list") {
             for device in Devices.list() { print("\(device.id)\t\(device.name)\tinput=\(device.inputs) output=\(device.outputs) rate=\(device.rate)") }
+            return
+        }
+        if CommandLine.arguments.contains("--usb-capture") {
+            guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
+                print("Audio input permission not granted to this test executable; test skipped")
+                return
+            }
+            guard let device = Devices.list().first(where: { $0.name.localizedCaseInsensitiveContains("USB") && $0.inputs > 0 }) else {
+                print("No USB audio input present; test skipped")
+                return
+            }
+            let audio = RadioAudio(), lock = NSLock()
+            var batches = 0, peak: Float = 0, failures: [String] = []
+            audio.onSamples = { _, level, _ in lock.lock(); batches += 1; peak = max(peak, level); lock.unlock() }
+            audio.onError = { message in lock.lock(); failures.append(message); lock.unlock() }
+            for channel in 0..<device.inputs {
+                for _ in 0..<3 {
+                    try audio.startInput(device: device, channel: channel)
+                    RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+                    audio.stopInput()
+                }
+            }
+            lock.lock(); let received = batches, maximum = peak, errors = failures; lock.unlock()
+            precondition(received > 0, "No capture callbacks received")
+            precondition(errors.isEmpty, errors.joined(separator: "; "))
+            print("USB capture/restart passed on \(device.name): \(received) batches, peak \(maximum), \(device.inputs) channels; no playback or PTT")
             return
         }
         if CommandLine.arguments.contains("--silent-output") {

@@ -62,6 +62,7 @@ enum Devices {
 }
 
 final class RadioAudio {
+    private let inputLock = NSLock()
     private var input: AudioQueueRef?
     private var output: AudioQueueRef?
     private var converter: AVAudioConverter?
@@ -88,13 +89,9 @@ final class RadioAudio {
         try audioCheck(AudioQueueNewInput(&format, { context, queue, buffer, _, _, _ in
             guard let context = context else { return }
             let owner = Unmanaged<RadioAudio>.fromOpaque(context).takeUnretainedValue()
-            let count = Int(buffer.pointee.mAudioDataByteSize) / 4
-            let data = Array(UnsafeBufferPointer(start: buffer.pointee.mAudioData.assumingMemoryBound(to: Float.self), count: count))
-            owner.processing.async { owner.consume(data) }
-            let status = AudioQueueEnqueueBuffer(queue, buffer, 0, nil)
-            if status != noErr { owner.onError?("Audio input buffer failed (\(status))") }
+            owner.capture(queue: queue, buffer: buffer)
         }, Unmanaged.passUnretained(self).toOpaque(), nil, nil, 0, &queue), "Create input")
-        input = queue
+        inputLock.lock(); input = queue; inputLock.unlock()
         do {
             let string = device.uid as CFString
             var uid = Unmanaged.passUnretained(string).toOpaque()
@@ -104,8 +101,32 @@ final class RadioAudio {
                 try audioCheck(AudioQueueAllocateBuffer(queue!, UInt32(2048 * 4 * inputChannels), &buffer), "Allocate input buffer")
                 try audioCheck(AudioQueueEnqueueBuffer(queue!, buffer!, 0, nil), "Queue input")
             }
-            try audioCheck(AudioQueueStart(queue!, nil), "Start input")
+            let start = AudioQueueStart(queue!, nil)
+            if start == kAudioQueueErr_CannotStart {
+                throw AudioFailure.message("Cannot start input on \(device.name) (CoreAudio \(start)). Stop audio in other applications, reconnect the USB device, refresh devices and retry. Check macOS microphone permission for JTTY Workbench.")
+            }
+            try audioCheck(start, "Start input on \(device.name)")
         } catch { stopInput(); throw error }
+    }
+
+    private func capture(queue: AudioQueueRef, buffer: AudioQueueBufferRef) {
+        // Mark the queue inactive before stopping it. Stop/Dispose can invoke callbacks;
+        // those callbacks must neither process flushed data nor re-enqueue a buffer.
+        inputLock.lock()
+        guard input == queue else { inputLock.unlock(); return }
+        let count = Int(buffer.pointee.mAudioDataByteSize) / MemoryLayout<Float>.size
+        let data = Array(UnsafeBufferPointer(start: buffer.pointee.mAudioData.assumingMemoryBound(to: Float.self), count: count))
+        processing.async { self.consume(data) }
+        let status = AudioQueueEnqueueBuffer(queue, buffer, 0, nil)
+        inputLock.unlock()
+        if status != noErr {
+            processing.async {
+                self.inputLock.lock()
+                let active = self.input == queue
+                self.inputLock.unlock()
+                if active { self.onError?("Audio input buffer failed (\(status))") }
+            }
+        }
     }
 
     private func consume(_ interleaved: [Float]) {
@@ -184,7 +205,12 @@ final class RadioAudio {
         if let queue = output { AudioQueueStop(queue, true); AudioQueueDispose(queue, true); output = nil }
     }
     func stopInput() {
-        if let queue = input { AudioQueueStop(queue, true); AudioQueueDispose(queue, true); input = nil }
+        inputLock.lock()
+        let queue = input
+        input = nil
+        inputLock.unlock()
+        // Never hold inputLock while CoreAudio waits for the callback to return.
+        if let queue = queue { AudioQueueStop(queue, true); AudioQueueDispose(queue, true) }
         processing.sync { converter = nil; sourceFormat = nil }
     }
     // Exercise the exact channel-selection and streaming conversion path without microphone access.
