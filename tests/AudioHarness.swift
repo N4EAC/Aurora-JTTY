@@ -2,10 +2,12 @@
 import Foundation
 import AVFoundation
 import CoreAudio
+import Darwin
 
 @main
 enum AudioHarness {
     static func main() throws {
+        setbuf(stdout, nil)
         if CommandLine.arguments.contains("--list") {
             for device in Devices.list() { print("\(device.id)\t\(device.name)\tinput=\(device.inputs) output=\(device.outputs) rate=\(device.rate)") }
             return
@@ -31,6 +33,16 @@ enum AudioHarness {
                 print("No USB audio input present; test skipped")
                 return
             }
+            var radio: UnsafeMutableRawPointer?
+            if CommandLine.arguments.contains("--dummy-cat") {
+                var error = [CChar](repeating: 0, count: 256)
+                radio = jw_radio_open(1, "", "", 38400, 1, 0, &error)
+                precondition(radio != nil, String(cString: error))
+                var frequency: Double = 0, ptt: Int32 = 0, mode = [CChar](repeating: 0, count: 32)
+                precondition(jw_radio_state(radio, &frequency, &ptt, &mode) == 0)
+                print("Dummy CAT connected and queried; no PTT commands")
+            }
+            defer { if let radio = radio { _ = jw_radio_close(radio) } }
             let audio = RadioAudio(), lock = NSLock()
             var batches = 0, peak: Float = 0, failures: [String] = []
             audio.onSamples = { _, level, _ in lock.lock(); batches += 1; peak = max(peak, level); lock.unlock() }
@@ -43,6 +55,7 @@ enum AudioHarness {
                 }
             }
             lock.lock(); let received = batches, maximum = peak, errors = failures; lock.unlock()
+            print("Capture result: batches=\(received), peak=\(maximum), errors=\(errors)")
             precondition(received > 0, "No capture callbacks received")
             precondition(errors.isEmpty, errors.joined(separator: "; "))
             print("USB capture/restart passed on \(device.name): \(received) batches, peak \(maximum), \(device.inputs) channels; no playback or PTT")
