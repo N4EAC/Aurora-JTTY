@@ -1,0 +1,3 @@
+[submodule "upstream/wsjtx"]
+	path = upstream/wsjtx
+	url = https://github.com/WSJTX/wsjtx.git
