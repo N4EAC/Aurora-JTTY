@@ -13,6 +13,23 @@ def edit(name, old, new):
     assert old in text, (name, old[:100])
     path.write_text(text.replace(old, new))
 
+# Save the last partial JTTY receive buffer on every monitoring stop path.
+# JTTY decoding is synchronous, so its decoded flag is final at this point.
+edit('widgets/mainwindow.cpp', 'void MainWindow::monitor (bool state)\n{', '''void MainWindow::monitor (bool state)
+{
+  if (!state && m_monitoring && m_mode=="JTTY" && !m_diskData
+      && (m_saveAll || m_saveDecoded)) jtty_save_wav();''')
+edit('widgets/mainwindow_jtty.cpp', '''  // Reject callers that arrive before a real JTTY capture exists; m_k0 is''', '''  if (!m_saveAll && (!m_saveDecoded || !m_bDecoded)) return;
+  // Reject callers that arrive before a real JTTY capture exists; m_k0 is''')
+edit('widgets/mainwindow_jtty.cpp', '''  // "Save decoded" keeps the file only if something was decoded; give the
+  // decoder a further 3 seconds to finish before killWaveFile() decides.
+  if (m_saveDecoded) killFileTimer.start (3000);''', '''  // Keep this capture once admitted; a later receive interval must not
+  // delete it after resetting m_bDecoded.
+  killFileTimer.stop();
+  LOG_INFO("JTTY WAV queued path=" << (m_fnameWE+".wav").toStdString()
+           << " samples=" << samples << " decoded=" << m_bDecoded
+           << " save_all=" << m_saveAll);''')
+
 # JTTY rows contain an optional UTC column followed by the audio frequency.
 # Selecting a frequency must never treat that number as a remote callsign.
 edit('widgets/mainwindow.cpp', '''    m_deCall = word;

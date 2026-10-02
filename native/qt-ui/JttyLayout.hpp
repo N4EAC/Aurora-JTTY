@@ -363,6 +363,29 @@ void MainWindow::jttyNoteInputError(QString const& message) {
 }
 
 bool MainWindow::jttyLayoutSmoke() {
+#ifdef WSJT_ENABLE_LIVE_AUDIO_TEST
+  // Actual stop-monitor route with a synthetic three-second capture, no input
+  // stream or transmitter. Verify selective saving and valid WAV output.
+  auto savedK=m_k0; auto savedLast=m_jttyLastSavedWavK0;
+  auto savedDecoded=m_bDecoded; auto savedAll=m_saveAll; auto savedSelective=m_saveDecoded;
+  auto savedDisk=m_diskData; auto savedMonitoring=m_monitoring; auto savedFilename=m_fnameWE;
+  m_k0=36000; m_jttyLastSavedWavK0=-1;
+  m_saveAll=false; m_saveDecoded=true; m_diskData=false; m_bDecoded=false;
+  jtty_save_wav();
+  if(m_jttyLastSavedWavK0!=-1) return false;
+  m_bDecoded=true; m_monitoring=true;
+  std::fill(dec_data.d2,dec_data.d2+36000,short(123));
+  on_monitorButton_clicked(false);
+  m_saveWAVSynchronizer.waitForFinished();
+  QFile recording(m_fnameWE+".wav");
+  bool valid=m_jttyLastSavedWavK0==36000 && recording.open(QIODevice::ReadOnly)
+    && recording.read(4)=="RIFF" && recording.size()>=72044;
+  recording.close(); recording.remove();
+  m_k0=savedK; m_jttyLastSavedWavK0=savedLast; m_bDecoded=savedDecoded;
+  m_saveAll=savedAll; m_saveDecoded=savedSelective; m_diskData=savedDisk;
+  m_monitoring=savedMonitoring; m_fnameWE=savedFilename;
+  if(!valid) return false;
+#endif
   auto messages=findChild<QSplitter*>("jttyMessagesSplitter");
   auto conversation=findChild<QWidget*>("jttyConversationPanel");
   auto floating=findChild<QDialog*>("jttyFloatingConversation");
