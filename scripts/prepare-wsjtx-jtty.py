@@ -148,4 +148,5 @@ subprocess.run([sys.executable, str(root / 'scripts/deepen-jtty-debug.py'), str(
 subprocess.run([sys.executable, str(root / 'scripts/customize-jtty-ui.py'), str(source)], check=True)
 subprocess.run([sys.executable, str(root / 'scripts/add-jtty-snr.py'), str(source)], check=True)
 subprocess.run([sys.executable, str(root / 'scripts/brand-aurora-jtty.py'), str(source)], check=True)
+subprocess.run([sys.executable, str(root / 'scripts/limit-jtty-fallback.py'), str(source)], check=True)
 print(source)
