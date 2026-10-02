@@ -119,6 +119,20 @@ edit('Audio/soundin.cpp', '  m_sink = sink;', '''  QAudioDeviceInfo selected;
     Q_EMIT error(message);
   },[this]{return QString("qt_state=%1 qt_error=%2 processed_us=%3").arg(m_stream?int(m_stream->state()):-1).arg(m_stream?int(m_stream->error()):-1).arg(m_stream?m_stream->processedUSecs():0);}));
   if(!m_routeWatch->valid()){Q_EMIT error(tr("Cannot uniquely identify the selected CoreAudio input device."));return;}
+  if(m_routeWatch->inputChannels()==1) {
+    if(channel==AudioDevice::Right) {
+      Q_EMIT error(tr("Selected input has one channel. Select Mono or Left in Radio / Audio settings."));return;
+    }
+    LOG_INFO("JTTY native mono input: using Mono for selected channel=" << int(channel));
+    channel=AudioDevice::Mono;
+  }
+  if(framesPerBuffer<=0) {
+    auto nativeFrames=m_routeWatch->nativeBufferFrames();
+    if(nativeFrames>0 && nativeFrames<=32768) {
+      framesPerBuffer=int(nativeFrames);
+      LOG_INFO("JTTY preserving native input buffer frames=" << framesPerBuffer);
+    }
+  }
 #endif
   m_sink = sink;''')
 edit('Audio/soundin.cpp', 'QAudioFormat format (device.preferredFormat())', 'QAudioFormat format (selected.preferredFormat())')

@@ -17,3 +17,5 @@ The Qt device name records requested selection, not independently verified effec
 For a comparison, fully quit the other radio applications, note whether CAT is disabled or connected, run Monitor briefly, then report whether sound was from the radio, from the microphone, or silent. Do not exercise Tune/PTT for a receive-only test. Correlate app timestamps with the corresponding `coreaudio-failure-*` file.
 
 `coreaudio-probe.cpp` is a separate ten-second receive-only HAL diagnostic. It selects an exact device name, does not open serial ports or change hardware formats, clears every output buffer to silence, and stops on device failure. It remains independent of the client build.
+
+For macOS devices with one native input channel, Mono/Left selections open a mono Qt stream; Right is rejected with a settings message. With automatic input buffering, capture preserves the device's existing buffer-frame count instead of accepting Qt's default hardware buffer resize. Explicit user buffer overrides remain effective.

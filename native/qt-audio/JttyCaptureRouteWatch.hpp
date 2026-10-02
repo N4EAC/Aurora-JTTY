@@ -92,6 +92,15 @@ public:
     timer_.stop();
     for(auto const& entry:subscriptions_) AudioObjectRemovePropertyListener(entry.id,&entry.address,changed,this);
   }
+  UInt32 inputChannels() const {
+    AudioStreamBasicDescription format{};UInt32 size=sizeof(format);
+    AudioObjectPropertyAddress a{kAudioDevicePropertyStreamFormat,kAudioObjectPropertyScopeInput,kAudioObjectPropertyElementMain};
+    return AudioObjectGetPropertyData(selected_,&a,0,nullptr,&size,&format)==noErr?format.mChannelsPerFrame:0;
+  }
+  UInt32 nativeBufferFrames() const {
+    OSStatus status=0;auto frames=integerProperty(selected_,kAudioDevicePropertyBufferFrameSize,&status);
+    return status==noErr?frames:0;
+  }
   bool valid() const {return healthy_ && selected_ && !uid_.isEmpty();}
   void begin(){sample();if(valid()) timer_.start();}
   void sample() {
