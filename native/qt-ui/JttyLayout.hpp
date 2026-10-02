@@ -18,7 +18,6 @@
 #include <QDateTime>
 #include <QActionGroup>
 #include <QMenu>
-#include <QWidgetAction>
 
 class JttyConversationWindow final : public QDialog {
 public:
@@ -331,16 +330,21 @@ void MainWindow::installJttyLayout() {
   }
   applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
   auto fontMenu=ui->menuView->addMenu(tr("Message font size"));
-  auto fontAction=new QWidgetAction(fontMenu);
-  auto fontSize=new QSpinBox(fontMenu);
-  fontSize->setObjectName("jttyFontSize");
-  fontSize->setRange(8,17); fontSize->setSuffix(tr(" pt"));
-  fontSize->setValue(qBound(8,m_settings->value("MainWindow/JttyMessageFontSize",m_settings->value("MainWindow/JttyFontSize",11)).toInt(),17));
-  fontAction->setDefaultWidget(fontSize); fontMenu->addAction(fontAction);
-  connect(fontSize,qOverload<int>(&QSpinBox::valueChanged),this,[this](int size) {
-    m_settings->setValue("MainWindow/JttyMessageFontSize",size);
-    applyApplicationStyle(qApp->font(),m_useDarkStyle);
-  });
+  auto fontGroup=new QActionGroup(this);
+  fontGroup->setObjectName("jttyFontSizes"); fontGroup->setExclusive(true);
+  int const selectedSize=qBound(8,m_settings->value("MainWindow/JttyMessageFontSize",m_settings->value("MainWindow/JttyFontSize",11)).toInt(),17);
+  for(int size=8;size<=17;++size) {
+    auto action=fontMenu->addAction(tr("%1 pt").arg(size));
+    action->setObjectName(QString("jttyFontSize%1").arg(size));
+    action->setData(size); action->setCheckable(true); fontGroup->addAction(action);
+    action->setChecked(size==selectedSize);
+    connect(action,&QAction::triggered,this,[this,size] {
+      m_settings->setValue("MainWindow/JttyMessageFontSize",size);
+      QFont font=ui->decodedTextBrowser->contentFont();font.setPointSize(size);
+      ui->decodedTextBrowser->setContentFont(font);
+      ui->decodedTextBrowser2->setContentFont(font);
+    });
+  }
   setMinimumSize(1080,720);
   resize(1280,1060);
   restoreGeometry(m_settings->value("MainWindow/JttyLayoutGeometry").toByteArray());
@@ -403,20 +407,22 @@ bool MainWindow::jttyLayoutSmoke() {
   auto floating=findChild<QDialog*>("jttyFloatingConversation");
   auto popout=findChild<QPushButton*>("jttyPopoutConversation");
   if(!messages || !conversation || !floating || !popout) return false;
-  auto fontSize=findChild<QSpinBox*>("jttyFontSize");
-  if(!fontSize || fontSize->minimum()!=8 || fontSize->maximum()!=17) return false;
-  int savedSize=fontSize->value();
+  auto fontGroup=findChild<QActionGroup*>("jttyFontSizes");
+  if(!fontGroup || fontGroup->actions().size()!=10 || !fontGroup->checkedAction()) return false;
+  auto savedSize=fontGroup->checkedAction();
   auto savedText=ui->decodedTextBrowser->toPlainText();
   auto originalUiFont=qApp->font();
   auto originalButtonFont=ui->monitorButton->font();
   for(int size : {8,17}) {
-    fontSize->setValue(size);
+    auto action=findChild<QAction*>(QString("jttyFontSize%1").arg(size));
+    if(!action) return false;
+    action->trigger();
     if(qApp->font()!=originalUiFont || ui->monitorButton->font()!=originalButtonFont
        || ui->decodedTextBrowser->contentFont().pointSize()!=size
        || ui->decodedTextBrowser2->contentFont().pointSize()!=size
        || ui->decodedTextBrowser->toPlainText()!=savedText) return false;
   }
-  fontSize->setValue(savedSize);
+  savedSize->trigger();
   auto darkTheme=findChild<QAction*>("jttyDarkTheme");
   auto lightTheme=findChild<QAction*>("jttyLightTheme");
   auto controls=findChild<QPushButton*>("jttyWaterfallControls");
