@@ -57,10 +57,10 @@ text = text[:start] + '''void MainWindow::set_mode_from_command_line(const QStri
 path.write_text(text)
 # Keep the user's original icon while preserving upstream attribution/about text.
 iconset = source / 'icons/Darwin/wsjtx.iconset'
-shutil.copytree(root / 'native/Assets/JTTY.iconset', iconset, dirs_exist_ok=True)
+shutil.copytree(root / 'native/Assets/Aurora-JTTY.iconset', iconset, dirs_exist_ok=True)
 edit('WSJTXLogging.cpp', 'min_severity["SYSLOG"] = trivial::error;', 'min_severity["SYSLOG"] = trivial::info;')
 edit('WSJTXLogging.cpp', 'min_severity["RIGCTRL"] = trivial::warning;', 'min_severity["RIGCTRL"] = trivial::debug;')
-shutil.copy2(root / 'native/Assets/JTTY.icns', source / 'icons/JTTY.icns')
+shutil.copy2(root / 'native/Assets/Aurora-JTTY.icns', source / 'icons/JTTY.icns')
 edit('CMake/Sources.cmake',
      'COMMAND iconutil -c icns --output "${CMAKE_BINARY_DIR}/${WSJTX_ICON_FILE}" "${CMAKE_SOURCE_DIR}/icons/Darwin/${CMAKE_PROJECT_NAME}.iconset"',
      'COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/icons/JTTY.icns" "${CMAKE_BINARY_DIR}/${WSJTX_ICON_FILE}"')
@@ -147,4 +147,5 @@ subprocess.run([sys.executable, str(root / 'scripts/deepen-jtty-debug.py'), str(
 
 subprocess.run([sys.executable, str(root / 'scripts/customize-jtty-ui.py'), str(source)], check=True)
 subprocess.run([sys.executable, str(root / 'scripts/add-jtty-snr.py'), str(source)], check=True)
+subprocess.run([sys.executable, str(root / 'scripts/brand-aurora-jtty.py'), str(source)], check=True)
 print(source)

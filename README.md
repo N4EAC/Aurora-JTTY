@@ -1,8 +1,10 @@
-# JTTY Workbench
+# Aurora JTTY 1.0
+
+Aurora JTTY retains the existing JTTY Workbench settings, recordings and logs so upgrading preserves station configuration.
 
 The current client is a JTTY-only fork of WSJT-X, using its Qt interface, receive/transmit audio, JTTY messaging, waterfall, frequency selector, station settings and Hamlib CAT/PTT control. GPLv3 or later. This independent build has no date-based expiration. The original Swift client remains in the repository for reference.
 
-Open `build/JTTY Workbench WSJTX.app`. This replacement uses separate settings from your installed WSJT-X and the old Swift client. Follow [the replacement setup guide](docs/WSJTX-JTTY-SETUP.md). Configure your callsign/grid, **Yaesu FT-710**, serial CAT port, and USB audio input/output in **Settings**. JTTY is the sole selectable operating mode. The interface uses a neutral gray theme with lighter message panels, JTTY-specific labels/help, and menus/settings limited to relevant features. It includes upstream JTTY frequency presets, including 7.090 MHz for 40 m.
+Open `build/Aurora JTTY.app`. This replacement uses separate settings from your installed WSJT-X and the old Swift client. Follow [the replacement setup guide](docs/WSJTX-JTTY-SETUP.md). Configure your callsign/grid, **Yaesu FT-710**, serial CAT port, and USB audio input/output in **Settings**. JTTY is the sole selectable operating mode. The interface uses a neutral gray theme with lighter message panels, JTTY-specific labels/help, and menus/settings limited to relevant features. It includes upstream JTTY frequency presets, including 7.090 MHz for 40 m.
 
 The October 2 failed test showed the selected USB device becoming unavailable and returning under a new CoreAudio device ID while CAT polls continued. The replacement removes the custom Swift/CAT/audio-helper lifecycle. Hardware receive continuity and RF operation still need a radio test; software tests do not establish that the USB failure is fixed.
 
@@ -14,7 +16,7 @@ With Xcode command-line tools and Homebrew:
 brew install gcc fftw cmake hamlib qt@5 boost libusb portaudio
 sh scripts/build-wsjtx-jtty.sh
 sh scripts/test-wsjtx-jtty.sh
-open "build/JTTY Workbench WSJTX.app"
+open "build/Aurora JTTY.app"
 ```
 
 The source overlay is recreated from the unchanged pinned submodule by `scripts/prepare-wsjtx-jtty.py`. Other mode actions, quick buttons, selection slots, saved-profile mode restoration and command-line mode selection are restricted to JTTY; the common DSP library is retained intact. Upstream copyright and license notices are preserved.

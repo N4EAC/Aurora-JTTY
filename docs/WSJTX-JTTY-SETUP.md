@@ -1,6 +1,6 @@
 # WSJT-X-based JTTY client for the FT-710
 
-Open `build/JTTY Workbench WSJTX.app`. This is the replacement Qt application, not the earlier Swift build. It uses an independent settings identity, so enter your station and radio settings once.
+Open `build/Aurora JTTY.app`. This is the replacement Qt application, not the earlier Swift build. It uses an independent settings identity, so enter your station and radio settings once.
 
 1. Open **File → Settings** (on macOS, the application preferences menu may also expose settings). Enter your callsign and grid under **General**.
 2. Under **Radio**, select **Yaesu FT-710**, the radio's CAT serial port (previously `/dev/cu.usbserial-016B87F30`), and **115200** baud if that is still the radio's CAT rate. Use CAT for PTT, USB/Data mode as appropriate for the FT-710, and your known working WSJT-X serial parameters. Use **Test CAT** to verify control. Test PTT only when you intend to key the radio.

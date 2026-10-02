@@ -12,7 +12,7 @@ cmake -S "$TASK_ROOT/build/wsjtx-jtty-source" -B "$TASK_ROOT/build/wsjtx-jtty-fo
   -DWSJT_FOX_OTP=ON -DWSJT_TRACE_CAT=ON -DWSJT_QDEBUG_TO_FILE=ON
 cmake --build "$TASK_ROOT/build/wsjtx-jtty-fork" --target wsjtx jt9 -j 6
 # Keep both builds available; the replacement is identifiable in Finder.
-FORK_APP="$TASK_ROOT/build/JTTY Workbench WSJTX.app"
+FORK_APP="$TASK_ROOT/build/Aurora JTTY.app"
 rm -rf "$FORK_APP"
 cp -R "$TASK_ROOT/build/wsjtx-jtty-fork/wsjtx.app" "$FORK_APP"
 cp "$TASK_ROOT/build/wsjtx-jtty-fork/jt9" "$FORK_APP/Contents/MacOS/jt9"

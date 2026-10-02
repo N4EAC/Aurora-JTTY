@@ -143,7 +143,7 @@ text=text[:body]+'''{
 ''' + text[end:];p.write_text(text)
 # App icon in About/splash is the original JTTY icon, too.
 for p in (source/'icons').rglob('icon_128x128.png'):
-    shutil.copy2(root/'native/Assets/JTTY.iconset/icon_128x128.png', p)
+    shutil.copy2(root/'native/Assets/Aurora-JTTY.iconset/icon_128x128.png', p)
 
 # Rebrand settings and waterfall tooltips as well as the main menus.
 for name in ['Configuration.ui', 'widgets/widegraph.ui']:
