@@ -154,3 +154,12 @@ edit('JttyTxLoopbackTestController.cpp', 'm_window->submitJttyText (contestExcha
 edit('JttyTxLoopbackTestController.cpp', 'm_window->submitJttyText (\n    adjacentStructuredFramesMessage ())', 'm_window->jttyLayoutSubmitFixture (\n    adjacentStructuredFramesMessage (),true)')
 # Capture before shutdown closes the embedded waterfall.
 edit('widgets/mainwindow.cpp', 'void MainWindow::closeEvent(QCloseEvent * e)\n{', 'void MainWindow::closeEvent(QCloseEvent * e)\n{\n  auto const preview=qEnvironmentVariable("JTTY_UI_PREVIEW");\n  if(!preview.isEmpty()) grab().save(preview);')
+
+# Stop the monitor before opening the error dialog; retain the selected name.
+edit('widgets/mainwindow.h', '  void saveJttyLayout();', '  void saveJttyLayout();\n  void jttyNoteInputError(QString const&);\n  QString m_jttyInputName;\n  QString m_jttyInputError;')
+edit('widgets/mainwindow_show_messages.cpp', 'void MainWindow::showSoundInError(const QString& errorMsg)\n{', 'void MainWindow::showSoundInError(const QString& errorMsg)\n{\n  jttyNoteInputError(errorMsg);')
+edit('widgets/mainwindow_slots.cpp', 'void MainWindow::on_monitorButton_clicked (bool checked)\n{', '''void MainWindow::on_monitorButton_clicked (bool checked)
+{
+  if(checked && !m_jttyInputError.isEmpty() && m_config.audio_input_device().isNull()) {
+    ui->monitorButton->setChecked(false);m_monitoring=false;return;
+  }''')

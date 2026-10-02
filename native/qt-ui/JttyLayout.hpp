@@ -288,13 +288,18 @@ void MainWindow::installJttyLayout() {
   auto devices = label(QString{},root);
   devices->setObjectName("jttyDeviceStatus");
   outer->addWidget(devices);
+  m_jttyInputName=m_config.audio_input_device().deviceName();
+  connect(this,&MainWindow::startAudioInputStream,this,[this](QAudioDeviceInfo const& device){
+    m_jttyInputName=device.deviceName();m_jttyInputError.clear();
+  });
+  connect(m_soundInput,&AudioInputSource::error,this,&MainWindow::jttyNoteInputError);
   auto update = [this,cat,scope,devices,counter,reading,meter] {
     ui->rh_decodes_title_label->setText(tr("Conversation"));
     if (reading) meter->setValue(reading->text().section(' ',0,0).toInt());
     cat->setText(m_config.rig_name() == "None" ? tr("○ Radio not selected") : (m_config.is_transceiver_online() ? tr("● CAT connected") : tr("○ CAT disconnected")));
     scope->setText(tr("Rx %1 Hz · ±%2 Hz · traffic near this frequency").arg(ui->RxFreqSpinBox_2->value()).arg(ui->sbFtol_2->value()));
     counter->setText(tr("%1 / 80 characters").arg(ui->Tx_Message->text().size()));
-    devices->setText(tr("RX · %1   |   OUT · %2   |   %3").arg(m_config.audio_input_device().isNull() ? tr("No input selected") : m_config.audio_input_device().deviceName(),m_config.audio_output_device().isNull() ? tr("No output selected") : m_config.audio_output_device().deviceName(),m_transmitting ? tr("Transmission active / queued") : (m_monitoring ? tr("Monitoring") : tr("Monitor stopped"))));
+    devices->setText(tr("RX · %1   |   OUT · %2   |   %3").arg(!m_jttyInputError.isEmpty() ? tr("%1 (unavailable)").arg(m_jttyInputName.isEmpty()?tr("Input"):m_jttyInputName) : (m_config.audio_input_device().isNull() ? tr("No input selected") : m_config.audio_input_device().deviceName()),m_config.audio_output_device().isNull() ? tr("No output selected") : m_config.audio_output_device().deviceName(),!m_jttyInputError.isEmpty() ? tr("Input error · Monitor stopped") : (m_transmitting ? tr("Transmission active / queued") : (m_monitoring ? tr("Monitoring") : tr("Monitor stopped")))));
   };
   auto timer = new QTimer(root); timer->setInterval(250);
   connect(timer,&QTimer::timeout,this,update); timer->start(); update();
@@ -305,6 +310,13 @@ void MainWindow::installJttyLayout() {
   messages->restoreState(m_settings->value("MainWindow/JttyMessagesSplitter").toByteArray());
   vertical->restoreState(m_settings->value("MainWindow/JttyVerticalSplitter").toByteArray());
   root->show();
+}
+
+void MainWindow::jttyNoteInputError(QString const& message) {
+  if(!m_config.audio_input_device().isNull()) m_jttyInputName=m_config.audio_input_device().deviceName();
+  m_jttyInputError=message;
+  if(m_monitoring) on_monitorButton_clicked(false);
+  ui->monitorButton->setChecked(false);
 }
 
 bool MainWindow::jttyLayoutSmoke() {
@@ -359,6 +371,13 @@ bool MainWindow::jttyLayoutSmoke() {
   disconnect(connection);
   bool preserved=draft==ui->Tx_Message && transcript==ui->decodedTextBrowser2 && m_soundInput==input && draft->text()=="UNSENT LAYOUT CHECK" && transcript->toPlainText()==originalHistory && opens==0 && tolerance && functionKeys==1;
   draft->setText(savedDraft);
+  auto wasMonitoring=m_monitoring;
+  jttyNoteInputError(QStringLiteral("Simulated capture failure"));
+  if(m_monitoring || ui->monitorButton->isChecked() || m_jttyInputError.isEmpty()) return false;
+  on_monitorButton_clicked(true);
+  if(m_config.audio_input_device().isNull() && m_monitoring) return false;
+  m_jttyInputError.clear();
+  if(wasMonitoring) on_monitorButton_clicked(true);
   return floated && restored && preserved;
 }
 
