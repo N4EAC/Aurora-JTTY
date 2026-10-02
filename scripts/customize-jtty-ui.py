@@ -13,6 +13,29 @@ def edit(name, old, new):
     assert old in text, (name, old[:100])
     path.write_text(text.replace(old, new))
 
+# JTTY rows contain an optional UTC column followed by the audio frequency.
+# Selecting a frequency must never treat that number as a remote callsign.
+edit('widgets/mainwindow.cpp', '''    m_deCall = word;
+    ui->dxCallEntry->setText(m_deCall);
+    return;''', r'''    static QRegularExpression const header {
+      QStringLiteral("^\\s*(?:[0-2][0-9][0-5][0-9][0-5][0-9]\\s+)?([0-9]{1,4})(?:\\s|$)")};
+    auto const match = header.match(line);
+    if (match.hasMatch()) {
+      int const frequency = match.captured(1).toInt();
+      if (frequency >= ui->RxFreqSpinBox_2->minimum()
+          && frequency <= ui->RxFreqSpinBox_2->maximum()) {
+        ui->RxFreqSpinBox_2->setValue(frequency);
+      }
+    }
+    auto const call = word.trimmed().toUpper();
+    static QRegularExpression const callCharacters {
+      QStringLiteral("^[A-Z0-9]+(?:/[A-Z0-9]+)*$")};
+    if (callCharacters.match(call).hasMatch() && Radio::is_callsign(call)) {
+      m_deCall = call;
+      ui->dxCallEntry->setText(m_deCall);
+    }
+    return;''')
+
 # Leave attribution documents and the copyright dialog unchanged. Replace only
 # operational text literals, never includes, identifiers or source URLs.
 for name in ['main.cpp', 'Configuration.cpp', 'widgets/mainwindow.cpp', 'widgets/mainwindow_settings.cpp', 'widgets/mainwindow_show_messages.cpp']:

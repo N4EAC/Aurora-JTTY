@@ -362,6 +362,19 @@ bool MainWindow::jttyLayoutSmoke() {
   auto input=m_soundInput;
   auto draft=ui->Tx_Message; auto transcript=ui->decodedTextBrowser2;
   auto originalRx=ui->RxFreqSpinBox_2->value(); auto originalTx=ui->TxFreqSpinBox_2->value();
+  auto originalCall=ui->dxCallEntry->text();
+  ui->TxFreqSpinBox_2->setValue(1600);
+  Q_EMIT ui->decodedTextBrowser->selectCallsign(" 1234  CQ N4EAC", "N4EAC", Qt::NoModifier);
+  if(ui->RxFreqSpinBox_2->value()!=1234 || m_wideGraph->rxFreq()!=1234
+     || ui->TxFreqSpinBox_2->value()!=1600 || ui->dxCallEntry->text()!="N4EAC") return false;
+  Q_EMIT ui->decodedTextBrowser->selectCallsign("093318  1456  CQ K1ABC", "1456", Qt::NoModifier);
+  if(ui->RxFreqSpinBox_2->value()!=1456 || m_wideGraph->rxFreq()!=1456
+     || ui->TxFreqSpinBox_2->value()!=1600 || ui->dxCallEntry->text()!="N4EAC") return false;
+  Q_EMIT ui->decodedTextBrowser2->selectCallsign("093318  1456  CQ k1abc/p", "k1abc/p", Qt::NoModifier);
+  if(ui->dxCallEntry->text()!="K1ABC/P" || ui->TxFreqSpinBox_2->value()!=1600) return false;
+  Q_EMIT ui->decodedTextBrowser->selectCallsign(" 1456  CQ K1ABC", "CQ", Qt::NoModifier);
+  if(ui->dxCallEntry->text()!="K1ABC/P") return false;
+  ui->dxCallEntry->setText(originalCall);
   ui->RxFreqSpinBox_2->setValue(1400);
   ui->pbR2T_2->click();
   if(ui->TxFreqSpinBox_2->value()!=1400) return false;
