@@ -49,6 +49,10 @@ void *jw_radio_open(int model, const char *path, const char *ptt_path, int baud,
         snprintf(value,sizeof(value),"%d",baud); code=conf(r->rig,"serial_speed",value);
         if (!code) { snprintf(value,sizeof(value),"%d",stopbits); code=conf(r->rig,"stop_bits",value); }
         if (!code) code=conf(r->rig,"serial_handshake","None");
+        // Do not let opening CAT assert serial control lines interpreted as PTT.
+        // RTS/DTR PTT uses its separately configured Standard USB port.
+        if (!code) code=conf(r->rig,"dtr_state","OFF");
+        if (!code) code=conf(r->rig,"rts_state","OFF");
     }
     // Explicit PTT choice: CAT, RTS, DTR, or none (receive-only).
     r->rig->state.pttport.type.ptt = ptt_method == 1 ? RIG_PTT_SERIAL_RTS :

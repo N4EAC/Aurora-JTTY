@@ -113,7 +113,9 @@ final class LiveStation: ObservableObject {
     @Published var conversation: [Conversation] = []
     @Published var draft = ""
     @Published var queue: [String] = []
-    private let audio = RadioAudio()
+    private let audio: StationAudio
+    private let enumerateDevices: () -> [AudioDevice]
+    private let inputPermission: () -> AVAuthorizationStatus
     private let rig = RigController()
     private let dsp = DispatchQueue(label: "jtty.dsp")
     private let backlogLock = NSLock()
@@ -127,7 +129,10 @@ final class LiveStation: ObservableObject {
     let logFolder: URL
     private let preferences: UserDefaults?
 
-    init(preferences: UserDefaults? = .standard, logs: URL? = nil) {
+    init(preferences: UserDefaults? = .standard, logs: URL? = nil,
+         audio: StationAudio = RadioAudio(), deviceList: @escaping () -> [AudioDevice] = Devices.list,
+         permission: @escaping () -> AVAuthorizationStatus = { AVCaptureDevice.authorizationStatus(for: .audio) }) {
+        self.audio = audio; self.enumerateDevices = deviceList; self.inputPermission = permission
         self.preferences = preferences
         if let data = preferences?.data(forKey: "station-settings"), let saved = try? JSONDecoder().decode(StationSettings.self, from: data), saved.macros.count == 8 { settings = saved }
         else { settings = StationSettings() }
@@ -152,7 +157,7 @@ final class LiveStation: ObservableObject {
         if let data = try? JSONEncoder().encode(settings) { preferences?.set(data, forKey: "station-settings") }
     }
     func refresh() {
-        devices = Devices.list()
+        devices = enumerateDevices()
         ports = ((try? FileManager.default.contentsOfDirectory(atPath: "/dev")) ?? []).filter { $0.hasPrefix("cu.") && !$0.contains("Bluetooth") && !$0.contains("debug-console") }.map { "/dev/" + $0 }
     }
     func connect() {
@@ -187,7 +192,7 @@ final class LiveStation: ObservableObject {
         refresh()
         guard let device = devices.first(where: { $0.uid == settings.inputUID && $0.inputs > 0 }) else { failure = "Select an audio input device"; return }
         guard validAudioSettings() else { return }
-        let permission = AVCaptureDevice.authorizationStatus(for: .audio)
+        let permission = inputPermission()
         if permission == .notDetermined {
             AVCaptureDevice.requestAccess(for: .audio) { allowed in DispatchQueue.main.async {
                 if allowed { self.startMonitor() } else { self.failure = "Allow audio input for JTTY Workbench in macOS Privacy & Security." }

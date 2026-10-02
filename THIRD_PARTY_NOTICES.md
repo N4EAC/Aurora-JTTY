@@ -22,4 +22,3 @@ FFTW (https://www.fftw.org/) is linked as a system-installed build dependency. F
 Before distributing a binary, provide the corresponding covered source and build scripts and satisfy dependency license requirements, including FFTW source obligations for any redistributed FFTW binary. The shallow upstream repository is part of the source needed to build this client; distributing only the new adapter files is insufficient.
 
 Hamlib (https://hamlib.github.io/) is dynamically linked as an external Homebrew dependency. Its library is licensed under LGPL version 2.1 or later; original notices remain in its source and installed package. No Hamlib binary is bundled in this developer app. Redistributed libraries require their applicable source and notice obligations.
-

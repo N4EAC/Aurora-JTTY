@@ -4,7 +4,7 @@ An independent macOS JTTY client using the unmodified WSJT-X JTTY core, SwiftUI,
 
 Open `build/JTTY Workbench.app`. Follow [the FT-710 setup guide](docs/FT-710-SETUP.md) before transmitting. Start with receive monitoring. Transmit is disabled at launch until explicitly enabled.
 
-Software and simulated-radio tests pass. Live capture and repeated restart on the connected USB audio device have passed. Actual RF transmission and over-the-air interoperability still require hardware validation. This is a development client, not a released installer.
+Software and simulated-radio tests pass. Some USB capture runs passed, but later GUI routing and silence failures remain unresolved. CAT/receive lifecycle tests pass with simulated input and a dummy radio; actual USB receive continuity, RF transmission and over-the-air interoperability still require hardware validation. This is a development client, not a released installer.
 
 ## Build
 
@@ -51,3 +51,5 @@ The PTT watchdog releases a timed transmission while this process and the contro
 See [verification details](research/PROTOTYPE-STATUS.md), `COPYING`, `THIRD_PARTY_NOTICES.md`, and [licensing research](research/JTTY-LICENSING.md). Preserve notices and provide corresponding source when distributing covered binaries. No upstream endorsement is claimed.
 
 The original app icon is in `native/Assets`; regenerate it with `swift scripts/make-icon.swift native/Assets` followed by `iconutil -c icns native/Assets/JTTY.iconset -o native/Assets/JTTY.icns`.
+
+See [the WSJT-X audio/CAT review](research/WSJTX-AUDIO-CAT-REVIEW.md) for architecture differences, the serial-control-line correction and remaining hardware limitations.

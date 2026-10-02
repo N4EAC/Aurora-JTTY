@@ -61,7 +61,17 @@ enum Devices {
     }
 }
 
-final class RadioAudio {
+protocol StationAudio: AnyObject {
+    var onSamples: (([Int16], Float, [Float]) -> Void)? { get set }
+    var onError: ((String) -> Void)? { get set }
+    func startInput(device: AudioDevice, channel: Int) throws
+    func stopInput()
+    func play(samples: [Int16], device: AudioDevice, channel: Int, gain: Float) throws -> Double
+    func stopOutput()
+    var outputRunning: Bool { get }
+}
+
+final class RadioAudio: StationAudio {
     private var input: UnsafeMutableRawPointer?
     private var routeTimer: Timer?
     private var output: AudioQueueRef?
