@@ -31,18 +31,18 @@ QSplitter::handle { background-color: #4d5865; }
 QFrame[jttyPanel="true"] { background-color: #30363e; border: 1px solid #56616e; border-radius: 7px; }
 QFrame#jttyFrequencyStrip, QFrame#jttyWaterfallPanel { background-color: #363f49; }
 QFrame#jttyConversationPanel { background-color: #29313a; }
-QLabel[jttyHeading="true"] { font-weight: bold; font-size: 17px; }
+QLabel[jttyHeading="true"] { font-weight: bold; }
 QLabel#jttyCatStatus { font-weight: bold; padding: 5px; }
 QLabel#jttyDeviceStatus { padding: 3px; color: #bdc8d4; }
-QLabel#jttyConversationScope, QLabel#jttyDraftCount { color: #b0becb; font-size: 13px; }
+QLabel#jttyConversationScope, QLabel#jttyDraftCount { color: #b0becb; }
 QLineEdit#Tx_Message { background-color: #20252b; padding: 6px; }
 QProgressBar { background-color: #262a30; border: 1px solid #657180; border-radius: 3px; }
 QProgressBar::chunk { background-color: #586f82; }
 
-QWidget#jttyWorkbenchRoot QWidget, QDialog#jttyFloatingConversation QWidget { font-size: 14px; }
+QWidget#jttyWorkbenchRoot QWidget, QDialog#jttyFloatingConversation QWidget { }
 QWidget#jttyWorkbenchRoot QLabel, QDialog#jttyFloatingConversation QLabel { background: transparent; }
-QLabel[jttyFieldLabel="true"] { font-size: 12px; }
-QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label { font-size: 17px; padding: 4px; }
+QLabel[jttyFieldLabel="true"] { }
+QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label { padding: 4px; }
 
 QCheckBox::indicator { background: #20252b; border: 1px solid #8996a5; border-radius: 3px; }
 QCheckBox::indicator:checked { background: #689ec7; }

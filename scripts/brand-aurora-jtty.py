@@ -19,3 +19,11 @@ edit('widgets/mainwindow.cpp','version (), revision (),','QCoreApplication::appl
 
 # Human-facing startup errors refer to this product; source attribution is intact.
 p=source/'main.cpp';p.write_text(p.read_text().replace('WSJT-X', 'Aurora JTTY'))
+
+# Consistent point-size control, including existing and future decoded text.
+for name in ('widgets/mainwindow.cpp','widgets/mainwindow.ui','widgets/JttyLayout.hpp'):
+ p=source/name;p.write_text(p.read_text().replace('Received messages','All Messages'))
+edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& requestedFont, bool dark)\n{\n  QFont font(requestedFont);\n  int const points=qBound(8,m_settings->value("MainWindow/JttyFontSize",11).toInt(),17);\n  font.setPointSize(points);')
+edit('widgets/mainwindow.cpp', '  check_button_color ();\n  updateMainWindowControlSizes ();', '  QFont decodedFont=ui->decodedTextBrowser->contentFont();\n  decodedFont.setPointSize(points);\n  ui->decodedTextBrowser->setContentFont(decodedFont);\n  ui->decodedTextBrowser2->setContentFont(decodedFont);\n  check_button_color ();\n  updateMainWindowControlSizes ();')
+edit('widgets/mainwindow.cpp', 'font.pointSizeF () * 1.6', 'font.pointSizeF ()')
+edit('widgets/plotter.cpp', 'Font.setPointSize(12);', 'Font.setPointSize(qBound(8, this->font().pointSize(), 17));')

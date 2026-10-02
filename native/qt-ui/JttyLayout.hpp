@@ -18,6 +18,7 @@
 #include <QDateTime>
 #include <QActionGroup>
 #include <QMenu>
+#include <QWidgetAction>
 
 class JttyConversationWindow final : public QDialog {
 public:
@@ -77,7 +78,7 @@ void MainWindow::installJttyLayout() {
   auto dial = new QVBoxLayout;
   dial->addWidget(label(tr("RADIO FREQUENCY · MHz"), top));
   mount(dial, ui->labDialFreq);
-  ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
+  ui->labDialFreq->setStyleSheet("background: transparent; font-weight: bold; border: none;");
   auto preset = new QHBoxLayout;
   mount(preset, ui->bandComboBox);
   mount(preset, ui->readFreq);
@@ -329,6 +330,17 @@ void MainWindow::installJttyLayout() {
     });
   }
   applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
+  auto fontMenu=ui->menuView->addMenu(tr("Font size"));
+  auto fontAction=new QWidgetAction(fontMenu);
+  auto fontSize=new QSpinBox(fontMenu);
+  fontSize->setObjectName("jttyFontSize");
+  fontSize->setRange(8,17); fontSize->setSuffix(tr(" pt"));
+  fontSize->setValue(qBound(8,m_settings->value("MainWindow/JttyFontSize",11).toInt(),17));
+  fontAction->setDefaultWidget(fontSize); fontMenu->addAction(fontAction);
+  connect(fontSize,qOverload<int>(&QSpinBox::valueChanged),this,[this](int size) {
+    m_settings->setValue("MainWindow/JttyFontSize",size);
+    applyApplicationStyle(qApp->font(),m_useDarkStyle);
+  });
   setMinimumSize(1080,720);
   resize(1280,1060);
   restoreGeometry(m_settings->value("MainWindow/JttyLayoutGeometry").toByteArray());
@@ -391,6 +403,17 @@ bool MainWindow::jttyLayoutSmoke() {
   auto floating=findChild<QDialog*>("jttyFloatingConversation");
   auto popout=findChild<QPushButton*>("jttyPopoutConversation");
   if(!messages || !conversation || !floating || !popout) return false;
+  auto fontSize=findChild<QSpinBox*>("jttyFontSize");
+  if(!fontSize || fontSize->minimum()!=8 || fontSize->maximum()!=17) return false;
+  int savedSize=fontSize->value();
+  auto savedText=ui->decodedTextBrowser->toPlainText();
+  for(int size : {8,17}) {
+    fontSize->setValue(size);
+    if(qApp->font().pointSize()!=size || ui->decodedTextBrowser->contentFont().pointSize()!=size
+       || ui->decodedTextBrowser2->contentFont().pointSize()!=size
+       || ui->decodedTextBrowser->toPlainText()!=savedText) return false;
+  }
+  fontSize->setValue(savedSize);
   auto darkTheme=findChild<QAction*>("jttyDarkTheme");
   auto lightTheme=findChild<QAction*>("jttyLightTheme");
   auto controls=findChild<QPushButton*>("jttyWaterfallControls");
