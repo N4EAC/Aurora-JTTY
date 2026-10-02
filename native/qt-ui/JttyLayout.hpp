@@ -140,11 +140,11 @@ void MainWindow::installJttyLayout() {
   mount(receivedLayout, ui->lh_decodes_headings_label);
   mount(receivedLayout, ui->decodedTextBrowser);
   receivedLayout->setStretch(receivedLayout->count()-1, 1);
-  ui->decodedTextBrowser->setMinimumHeight(210);
+  ui->decodedTextBrowser->setMinimumHeight(60);
   receivedLayout->addWidget(label(tr("Click a waterfall signal to select its Rx offset."), received));
 
   auto conversation = panel(messages, "jttyConversationPanel");
-  conversation->setMinimumHeight(530);
+  conversation->setMinimumHeight(0);
   conversation->setMinimumWidth(620);
   auto conversationLayout = new QVBoxLayout(conversation);
   conversationLayout->setContentsMargins(14, 12, 14, 12);
@@ -171,7 +171,7 @@ void MainWindow::installJttyLayout() {
   });
   mount(conversationLayout, ui->decodedTextBrowser2);
   conversationLayout->setStretch(conversationLayout->count()-1, 1);
-  ui->decodedTextBrowser2->setMinimumHeight(190);
+  ui->decodedTextBrowser2->setMinimumHeight(60);
   auto draftLabel = new QHBoxLayout;
   draftLabel->addWidget(label(tr("Message"), conversation));
   draftLabel->addStretch();
@@ -277,12 +277,12 @@ void MainWindow::installJttyLayout() {
   mount(waterfallHeader,ui->label);
   waterfallLayout->addLayout(waterfallHeader);
   m_wideGraph->setParent(waterfall, Qt::Widget);
-  m_wideGraph->setMinimumSize(0,180);
+  m_wideGraph->setMinimumSize(0,80);
   m_wideGraph->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
   waterfallLayout->addWidget(m_wideGraph.data());
   m_wideGraph->show();
   vertical->setCollapsible(0,false); vertical->setCollapsible(1,false);
-  messages->setMinimumHeight(580);
+  messages->setMinimumHeight(0);
   vertical->setSizes({580,240});
   outer->addWidget(vertical,1);
   auto devices = label(QString{},root);
@@ -299,7 +299,7 @@ void MainWindow::installJttyLayout() {
   auto timer = new QTimer(root); timer->setInterval(250);
   connect(timer,&QTimer::timeout,this,update); timer->start(); update();
   setCentralWidget(root);
-  setMinimumSize(1080,1060);
+  setMinimumSize(1080,720);
   resize(1280,1060);
   restoreGeometry(m_settings->value("MainWindow/JttyLayoutGeometry").toByteArray());
   messages->restoreState(m_settings->value("MainWindow/JttyMessagesSplitter").toByteArray());
@@ -313,6 +313,18 @@ bool MainWindow::jttyLayoutSmoke() {
   auto floating=findChild<QDialog*>("jttyFloatingConversation");
   auto popout=findChild<QPushButton*>("jttyPopoutConversation");
   if(!messages || !conversation || !floating || !popout) return false;
+  auto originalSize=size();
+  resize(width(),820);
+  QApplication::processEvents();
+  bool shrunk=height()<=820;
+  auto toolsButton=ui->lookupButton;
+  bool accessible=conversation->rect().contains(toolsButton->mapTo(conversation,QPoint(0,0)))
+    && conversation->rect().contains(toolsButton->mapTo(conversation,QPoint(toolsButton->width()-1,toolsButton->height()-1)));
+  resize(width(),1160);
+  QApplication::processEvents();
+  bool grew=height()>=1160;
+  resize(originalSize);
+  if(!shrunk || !grew || !accessible) return false;
   auto input=m_soundInput;
   auto draft=ui->Tx_Message; auto transcript=ui->decodedTextBrowser2;
   auto originalRx=ui->RxFreqSpinBox_2->value(); auto originalTx=ui->TxFreqSpinBox_2->value();
