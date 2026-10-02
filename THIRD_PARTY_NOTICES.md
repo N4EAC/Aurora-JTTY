@@ -23,4 +23,3 @@ Before distributing a binary, provide the corresponding covered source and build
 
 Hamlib (https://hamlib.github.io/) is dynamically linked as an external Homebrew dependency. Its library is licensed under LGPL version 2.1 or later; original notices remain in its source and installed package. No Hamlib binary is bundled in this developer app. Redistributed libraries require their applicable source and notice obligations.
 
-PortAudio (https://www.portaudio.com/) is dynamically linked as an external Homebrew dependency for receive capture. It uses the MIT license, Copyright (c) 1999-2002 Ross Bencina and Phil Burk; retain its copyright and permission notice when redistributing the library. No PortAudio binary is bundled in this developer app.

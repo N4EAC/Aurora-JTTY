@@ -91,7 +91,7 @@ final class RadioAudio {
             jw_capture_open(device.id, name, Int32(inputChannels), device.rate, { samples, count, context in
                 guard let samples = samples, let context = context else { return }
                 let owner = Unmanaged<RadioAudio>.fromOpaque(context).takeUnretainedValue()
-                // PortAudio owns the callback buffer; copy before returning to its thread.
+                // CoreAudio owns the callback buffer; copy before returning to its thread.
                 let copy = Array(UnsafeBufferPointer(start: samples, count: Int(count)))
                 owner.processing.async { owner.consume(copy) }
             }, Unmanaged.passUnretained(self).toOpaque(), &error)
@@ -206,7 +206,7 @@ final class RadioAudio {
         routeTimer?.invalidate(); routeTimer = nil
         let capture = input
         input = nil
-        // PortAudio waits for callbacks before releasing the capture context.
+        // CoreAudio waits for callbacks before releasing the capture context.
         if let capture = capture { jw_capture_close(capture) }
         processing.sync { converter = nil; sourceFormat = nil }
     }

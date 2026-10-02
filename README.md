@@ -1,6 +1,6 @@
 # JTTY Workbench
 
-An independent macOS JTTY client using the unmodified WSJT-X JTTY core, SwiftUI, PortAudio capture, CoreAudio playback and Hamlib. GPLv3 or later. Version 0.2 provides live receive, waterfall, audio device/channel selectors, a transmit queue, eight editable macros, CAT frequency/mode control, PTT, tune, contact logging and WAV tools.
+An independent macOS JTTY client using the unmodified WSJT-X JTTY core, SwiftUI, direct CoreAudio capture and playback and Hamlib. GPLv3 or later. Version 0.2 provides live receive, waterfall, audio device/channel selectors, a transmit queue, eight editable macros, CAT frequency/mode control, PTT, tune, contact logging and WAV tools.
 
 Open `build/JTTY Workbench.app`. Follow [the FT-710 setup guide](docs/FT-710-SETUP.md) before transmitting. Start with receive monitoring. Transmit is disabled at launch until explicitly enabled.
 
@@ -11,7 +11,7 @@ Software and simulated-radio tests pass. Live capture and repeated restart on th
 With Xcode command-line tools and Homebrew:
 
 ```sh
-brew install gcc fftw cmake hamlib portaudio
+brew install gcc fftw cmake hamlib
 sh scripts/build.sh
 sh scripts/test.sh
 open "build/JTTY Workbench.app"
@@ -39,7 +39,7 @@ Input WAV files must be 12 kHz mono PCM16, at most 180 seconds. Messages support
 
 ## Source and verification
 
-- `native/Audio.swift` and `native/capture.c`: device selection, PortAudio capture, playback and conversion.
+- `native/Audio.swift` and `native/capture.c`: device selection, direct CoreAudio capture, playback and conversion.
 - `native/Station.swift` and `LiveView.swift`: station workflow and interface.
 - `native/radio.c`: Hamlib commands, serialization and timed PTT release.
 - `native/live_bridge.f90`: streaming upstream decoder and encoder bindings.

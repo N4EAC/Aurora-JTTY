@@ -1,91 +1,84 @@
-// PortAudio receive bridge. GPL-3.0-or-later, 2026-10-01.
+// Capture directly from the selected CoreAudio device. GPL-3.0-or-later.
 #include "Bridge.h"
-#include <portaudio.h>
-#include <pa_mac_core.h>
+#include <CoreAudio/CoreAudio.h>
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 typedef struct {
-    PaStream *stream;
+    AudioDeviceID device;
+    AudioDeviceIOProcID proc;
     jw_capture_callback callback;
     void *context;
     int channels;
+    float *samples;
+    unsigned int capacity;
     atomic_int active;
 } capture_state;
 
-static int receive_audio(const void *input, void *output, unsigned long frames,
-                         const PaStreamCallbackTimeInfo *time, PaStreamCallbackFlags flags,
-                         void *context) {
-    (void)output; (void)time; (void)flags;
+static OSStatus receive_audio(AudioDeviceID device, const AudioTimeStamp *now,
+ const AudioBufferList *input, const AudioTimeStamp *input_time,
+ AudioBufferList *output, const AudioTimeStamp *output_time, void *context) {
+    (void)now; (void)input_time; (void)output_time;
     capture_state *state = context;
-    if (!atomic_load(&state->active)) return paComplete;
-    if (input) state->callback(input, (int)(frames * state->channels), state->context);
-    return paContinue;
+    // Device IO can include output buffers; never supply modulation from capture.
+    if (output) for (UInt32 b=0;b<output->mNumberBuffers;b++)
+        if(output->mBuffers[b].mData) memset(output->mBuffers[b].mData,0,output->mBuffers[b].mDataByteSize);
+    if (!atomic_load(&state->active) || device != state->device || !input) return noErr;
+    unsigned int frames=0, channels=0;
+    for(UInt32 b=0;b<input->mNumberBuffers;b++) {
+        const AudioBuffer *buffer=&input->mBuffers[b];
+        if (!buffer->mData || !buffer->mNumberChannels) continue;
+        unsigned int n=buffer->mDataByteSize/(sizeof(float)*buffer->mNumberChannels);
+        if(!frames || n<frames) frames=n;
+        channels+=buffer->mNumberChannels;
+    }
+    if(channels!=(unsigned)state->channels || !frames || frames>state->capacity) return noErr;
+    unsigned int offset=0;
+    for(UInt32 b=0;b<input->mNumberBuffers;b++) {
+        const AudioBuffer *buffer=&input->mBuffers[b];
+        if(!buffer->mData) continue;
+        const float *values=buffer->mData;
+        for(unsigned int f=0;f<frames;f++) for(unsigned int c=0;c<buffer->mNumberChannels;c++)
+            state->samples[f*channels+offset+c]=values[f*buffer->mNumberChannels+c];
+        offset+=buffer->mNumberChannels;
+    }
+    state->callback(state->samples,(int)(frames*channels),state->context);
+    return noErr;
 }
 
-static void report_error(char *error, const char *operation, PaError code) {
-    const PaHostErrorInfo *host = Pa_GetLastHostErrorInfo();
-    snprintf(error, 512, "%s: %s (%d)%s%s", operation, Pa_GetErrorText(code), code,
-             code == paUnanticipatedHostError && host && host->errorText ? ": " : "",
-             code == paUnanticipatedHostError && host && host->errorText ? host->errorText : "");
-}
-
-void *jw_capture_open(uint32_t device_id, const char *name, int channels, double rate,
-                      jw_capture_callback callback, void *context, char *error) {
-    error[0] = 0;
-    PaError result = Pa_Initialize();
-    if (result != paNoError) { report_error(error, "Initialize PortAudio", result); return NULL; }
-    PaDeviceIndex selected = paNoDevice;
-    int matches = 0;
-    int count = Pa_GetDeviceCount();
-    if (count < 0) { report_error(error, "List audio devices", count); Pa_Terminate(); return NULL; }
-    for (int i = 0; i < count; ++i) {
-        const PaDeviceInfo *info = Pa_GetDeviceInfo(i);
-        if (info && info->maxInputChannels >= channels && !strcmp(info->name, name)) {
-            const PaHostApiInfo *host = Pa_GetHostApiInfo(info->hostApi);
-            if (host && host->type == paCoreAudio) { selected = i; ++matches; }
-        }
+void *jw_capture_open(uint32_t device_id,const char *name,int channels,double rate,
+ jw_capture_callback callback,void *context,char *error) {
+    error[0]=0;
+    AudioObjectPropertyAddress address={kAudioDevicePropertyStreamFormat,kAudioDevicePropertyScopeInput,kAudioObjectPropertyElementMain};
+    AudioStreamBasicDescription format={0};UInt32 bytes=sizeof(format);
+    OSStatus result=AudioObjectGetPropertyData(device_id,&address,0,NULL,&bytes,&format);
+    if(result || format.mFormatID!=kAudioFormatLinearPCM || !(format.mFormatFlags&kAudioFormatFlagIsFloat) || format.mBitsPerChannel!=32 || format.mSampleRate!=rate) {
+        snprintf(error,512,"Input %s has an unsupported or changed hardware format (%d). Refresh devices.",name,result);return NULL;
     }
-    if (matches != 1) {
-        snprintf(error, 512, "Selected input device is %s. Refresh audio devices and select it again.", matches ? "ambiguous" : "unavailable");
-        Pa_Terminate(); return NULL;
-    }
-    capture_state *state = calloc(1, sizeof(*state));
-    if (!state) { snprintf(error, 512, "Cannot allocate audio capture"); Pa_Terminate(); return NULL; }
-    state->callback = callback; state->context = context; state->channels = channels;
-    atomic_init(&state->active, 1);
-    const PaDeviceInfo *info = Pa_GetDeviceInfo(selected);
-    PaStreamParameters parameters = {selected, channels, paFloat32, info->defaultHighInputLatency, NULL};
-    result = Pa_OpenStream(&state->stream, &parameters, NULL, rate, 512, paNoFlag, receive_audio, state);
-    if (result == paNoError && PaMacCore_GetStreamInputDevice(state->stream) != device_id) {
-        snprintf(error, 512, "USB input routing mismatch: requested %s (device %u), PortAudio opened device %u. Capture stopped; no microphone fallback.", name, device_id, PaMacCore_GetStreamInputDevice(state->stream));
-        Pa_CloseStream(state->stream); free(state); Pa_Terminate(); return NULL;
-    }
-    if (result == paNoError) result = Pa_StartStream(state->stream);
-    if (result == paNoError && PaMacCore_GetStreamInputDevice(state->stream) != device_id) {
-        snprintf(error, 512, "Capture started on an unexpected device; monitoring stopped. Select the USB input again.");
-        atomic_store(&state->active, 0);
-        Pa_AbortStream(state->stream); Pa_CloseStream(state->stream);
-        free(state); Pa_Terminate(); return NULL;
-    }
-    if (result != paNoError) {
-        report_error(error, "Start PortAudio input", result);
-        atomic_store(&state->active, 0);
-        if (state->stream) Pa_CloseStream(state->stream);
-        free(state); Pa_Terminate(); return NULL;
+    capture_state *state=calloc(1,sizeof(*state));
+    if(!state){snprintf(error,512,"Cannot allocate capture");return NULL;}
+    state->device=device_id;state->channels=channels;state->callback=callback;state->context=context;state->capacity=65536;
+    state->samples=calloc(state->capacity*(unsigned)channels,sizeof(float));
+    if(!state->samples){free(state);snprintf(error,512,"Cannot allocate input buffers");return NULL;}
+    atomic_init(&state->active,1);
+    result=AudioDeviceCreateIOProcID(device_id,receive_audio,state,&state->proc);
+    if(!result) result=AudioDeviceStart(device_id,state->proc);
+    if(result){
+        snprintf(error,512,"Start direct USB capture on %s failed (%d)",name,result);
+        atomic_store(&state->active,0);
+        if(state->proc) AudioDeviceDestroyIOProcID(device_id,state->proc);
+        free(state->samples);free(state);return NULL;
     }
     return state;
 }
 
 void jw_capture_close(void *context) {
-    if (!context) return;
-    capture_state *state = context;
-    atomic_store(&state->active, 0);
-    Pa_AbortStream(state->stream);
-    // Closing waits for callbacks before their context can be released.
-    Pa_CloseStream(state->stream);
-    free(state);
-    Pa_Terminate();
+    if(!context)return;
+    capture_state *state=context;
+    atomic_store(&state->active,0);
+    AudioDeviceStop(state->device,state->proc);
+    AudioDeviceDestroyIOProcID(state->device,state->proc);
+    free(state->samples);free(state);
 }
