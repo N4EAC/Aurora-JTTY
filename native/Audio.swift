@@ -71,9 +71,33 @@ protocol StationAudio: AnyObject {
     var outputRunning: Bool { get }
 }
 
+// Preserve sample boundaries across arbitrary pipe reads (including odd byte counts).
+final class MonoPCM16PipeDecoder {
+    private var pending = Data()
+    func append(_ data: Data) -> [Float] {
+        pending.append(data)
+        let size = pending.count - pending.count % 2
+        guard size > 0 else { return [] }
+        let bytes = Array(pending.prefix(size))
+        pending = Data(pending.dropFirst(size))
+        return stride(from: 0, to: size, by: 2).map { index in
+            Float(Int16(bitPattern: UInt16(bytes[index]) | UInt16(bytes[index + 1]) << 8)) / 32768
+        }
+    }
+}
+
+private final class QtCaptureSession {
+    let process = Process(), audio = Pipe(), diagnostics = Pipe(), commands = Pipe()
+    let lock = NSLock()
+    var active = true
+    let decoder = MonoPCM16PipeDecoder()
+    var messages = Data()
+    func isActive() -> Bool { lock.lock(); defer { lock.unlock() }; return active }
+    func cancel() { lock.lock(); active = false; lock.unlock() }
+}
+
 final class RadioAudio: StationAudio {
-    private var input: UnsafeMutableRawPointer?
-    private var routeTimer: Timer?
+    private var input: QtCaptureSession?
     private var output: AudioQueueRef?
     private var converter: AVAudioConverter?
     private var sourceFormat: AVAudioFormat?
@@ -94,51 +118,54 @@ final class RadioAudio: StationAudio {
         }
         let device = current
         guard channel >= 0, channel < device.inputs else { throw AudioFailure.message("Select an available input channel") }
-        inputChannels = device.inputs
-        selectedChannel = channel
+        guard device.inputs <= 2 else { throw AudioFailure.message("WSJT-X audio input supports mono or stereo devices") }
+        let factor = Int((device.rate / 12000).rounded())
+        guard factor >= 1, factor <= 8, abs(Double(factor) * 12000 - device.rate) < 1 else {
+            throw AudioFailure.message("WSJT-X input requires a sample rate that is a multiple of 12 kHz; use 48 kHz in Audio MIDI Setup")
+        }
+        // Upstream AudioDevice selects the channel before writing mono PCM16.
+        inputChannels = 1; selectedChannel = 0
         sourceFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: device.rate, channels: 1, interleaved: false)
         let target = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 12000, channels: 1, interleaved: false)!
         converter = AVAudioConverter(from: sourceFormat!, to: target)
-        guard converter != nil else { throw AudioFailure.message("Cannot convert this audio device to 12 kHz") }
-        var error = [CChar](repeating: 0, count: 512)
-        input = device.name.withCString { name in
-            jw_capture_open(device.id, name, Int32(inputChannels), device.rate, { samples, count, context in
-                guard let samples = samples, let context = context else { return }
-                let owner = Unmanaged<RadioAudio>.fromOpaque(context).takeUnretainedValue()
-                // CoreAudio owns the callback buffer; copy before returning to its thread.
-                let copy = Array(UnsafeBufferPointer(start: samples, count: Int(count)))
-                owner.processing.async { owner.consume(copy) }
-            }, Unmanaged.passUnretained(self).toOpaque(), &error)
-        }
-        guard input != nil else {
-            stopInput()
-            throw AudioFailure.message(String(cString: error))
-        }
-        routeTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            self?.verifyInputRoute(expected: device.id)
-        }
-    }
-
-    private func verifyInputRoute(expected: AudioDeviceID) {
-        guard input != nil else { return }
-        if #available(macOS 14.2, *) {
-            var pid = getpid(), process: AudioObjectID = 0
-            var size = UInt32(MemoryLayout<AudioObjectID>.size)
-            var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyTranslatePIDToProcessObject,
-                mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
-            guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address,
-                UInt32(MemoryLayout<pid_t>.size), &pid, &size, &process) == noErr, process != 0 else { return }
-            address.mSelector = kAudioProcessPropertyDevices
-            address.mScope = kAudioObjectPropertyScopeInput
-            guard AudioObjectGetPropertyDataSize(process, &address, 0, nil, &size) == noErr, size > 0 else { return }
-            var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
-            guard AudioObjectGetPropertyData(process, &address, 0, nil, &size, &ids) == noErr else { return }
-            if ids.contains(where: { $0 != expected }) {
-                let names = Devices.list().filter { ids.contains($0.id) }.map(\.name).joined(separator: ", ")
-                stopInput()
-                onError?("macOS changed the capture source to \(names). Monitoring stopped. In the menu-bar audio controls for JTTY Workbench, select Standard Mic Mode and USB Audio Device, then retry Monitor.")
+        guard converter != nil else { throw AudioFailure.message("Cannot convert selected input to 12 kHz") }
+        let session = QtCaptureSession()
+        guard let executable = Bundle.main.executableURL else { throw AudioFailure.message("Cannot locate audio helper") }
+        session.process.executableURL = executable.deletingLastPathComponent().appendingPathComponent("jtty-audio-input")
+        session.process.arguments = [device.name, String(channel), String(factor)]
+        session.process.standardOutput = session.audio
+        session.process.standardError = session.diagnostics
+        session.process.standardInput = session.commands
+        session.audio.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty, let self = self else { return }
+            self.processing.async {
+                guard session.isActive() else { return }
+                let values = session.decoder.append(data)
+                guard !values.isEmpty else { return }
+                self.consume(values)
             }
         }
+        session.diagnostics.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty, let self = self else { return }
+            self.processing.async {
+                guard session.isActive() else { return }
+                session.messages.append(data)
+                while let end = session.messages.firstIndex(of: 10) {
+                    let message = String(decoding: session.messages[..<end], as: UTF8.self)
+                    session.messages.removeSubrange(...end)
+                    if message.hasPrefix("ERROR ") { self.onError?("WSJT-X audio: " + message.dropFirst(6)) }
+                }
+            }
+        }
+        session.process.terminationHandler = { [weak self] process in
+            guard session.isActive() else { return }
+            self?.onError?("WSJT-X audio helper stopped unexpectedly (exit \(process.terminationStatus))")
+        }
+        input = session
+        do { try session.process.run() }
+        catch { stopInput(); throw AudioFailure.message("Cannot start WSJT-X audio helper: \(error.localizedDescription)") }
     }
 
     private func consume(_ interleaved: [Float]) {
@@ -220,11 +247,17 @@ final class RadioAudio: StationAudio {
         if let queue = output { AudioQueueStop(queue, true); AudioQueueDispose(queue, true); output = nil }
     }
     func stopInput() {
-        routeTimer?.invalidate(); routeTimer = nil
-        let capture = input
-        input = nil
-        // CoreAudio waits for callbacks before releasing the capture context.
-        if let capture = capture { jw_capture_close(capture) }
+        let session = input; input = nil
+        if let session = session {
+            session.cancel()
+            try? session.commands.fileHandleForWriting.close()
+            let deadline = Date().addingTimeInterval(2)
+            while session.process.isRunning && Date() < deadline { Thread.sleep(forTimeInterval: 0.01) }
+            if session.process.isRunning { session.process.terminate(); session.process.waitUntilExit() }
+            session.audio.fileHandleForReading.readabilityHandler = nil
+            session.diagnostics.fileHandleForReading.readabilityHandler = nil
+            session.process.terminationHandler = nil
+        }
         processing.sync { converter = nil; sourceFormat = nil; spectrumHistory.removeAll() }
     }
     // Exercise the exact channel-selection and streaming conversion path without microphone access.

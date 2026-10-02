@@ -38,3 +38,7 @@ The encoder/decoder, native sample-rate conversion, transmit queue, Hamlib dummy
 ## USB receive troubleshooting
 
 CAT and USB audio are separate devices. Select **USB Audio Device** as input and channel 1, then press Monitor. If CoreAudio cannot start input, stop audio monitoring in WSJT-X/fldigi, reconnect the radio's USB cable, refresh devices and retry. Check JTTY Workbench under macOS Privacy & Security → Microphone. The AudioQueue input path produced -66632/-66681 on this device. The updated build uses direct CoreAudio device callbacks for capture, and has passed live USB receive and restart tests. Quit and reopen the app to load the update. If monitoring runs but the meter remains silent, check the radio's USB OUT LEVEL and selected audio source.
+
+## Version 0.3 receive backend
+
+The current app uses WSJT-X's original Qt SoundInput and AudioDevice implementation through a bundled `jtty-audio-input` helper, with a dedicated audio thread. The older AudioQueue, PortAudio and direct IOProc capture paths have been removed. Select the input by its device name and channel in Station Setup. Duplicate device names are rejected instead of selecting a default. Mono and stereo inputs at multiples of 12 kHz are supported; the FT-710 USB interface normally uses 48 kHz. Software PCM transport, channel selection, stream descriptors, conversion and CAT/receive lifecycle tests pass. The radio was disconnected during this replacement; real USB operation is not yet verified. macOS microphone permission also applies to USB audio capture.

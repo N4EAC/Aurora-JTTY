@@ -6,8 +6,8 @@
 <key>CFBundleIconFile</key><string>JTTY.icns</string>
 <key>CFBundleName</key><string>JTTY Workbench</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleVersion</key><string>2</string>
-<key>CFBundleShortVersionString</key><string>0.2.0</string>
+<key>CFBundleVersion</key><string>3</string>
+<key>CFBundleShortVersionString</key><string>0.3.0</string>
 <key>NSMicrophoneUsageDescription</key><string>Receive JTTY signals from your selected radio USB audio input.</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>

@@ -1,6 +1,6 @@
 # JTTY Workbench
 
-An independent macOS JTTY client using the unmodified WSJT-X JTTY core, SwiftUI, direct CoreAudio capture and playback and Hamlib. GPLv3 or later. Version 0.2 provides live receive, waterfall, audio device/channel selectors, a transmit queue, eight editable macros, CAT frequency/mode control, PTT, tune, contact logging and WAV tools.
+An independent macOS JTTY client using the unmodified WSJT-X JTTY core, SwiftUI, WSJT-X Qt audio capture, CoreAudio playback and Hamlib. GPLv3 or later. Version 0.3 provides live receive, waterfall, audio device/channel selectors, a transmit queue, eight editable macros, CAT frequency/mode control, PTT, tune, contact logging and WAV tools.
 
 Open `build/JTTY Workbench.app`. Follow [the FT-710 setup guide](docs/FT-710-SETUP.md) before transmitting. Start with receive monitoring. Transmit is disabled at launch until explicitly enabled.
 
@@ -11,7 +11,7 @@ Software and simulated-radio tests pass. Some USB capture runs passed, but later
 With Xcode command-line tools and Homebrew:
 
 ```sh
-brew install gcc fftw cmake hamlib
+brew install gcc fftw cmake hamlib qt@5
 sh scripts/build.sh
 sh scripts/test.sh
 open "build/JTTY Workbench.app"
@@ -39,7 +39,7 @@ Input WAV files must be 12 kHz mono PCM16, at most 180 seconds. Messages support
 
 ## Source and verification
 
-- `native/Audio.swift` and `native/capture.c`: device selection, direct CoreAudio capture, playback and conversion.
+- `native/Audio.swift` and `native/qt-audio/`: bridge to upstream WSJT-X Qt capture, PCM conversion and CoreAudio playback.
 - `native/Station.swift` and `LiveView.swift`: station workflow and interface.
 - `native/radio.c`: Hamlib commands, serialization and timed PTT release.
 - `native/live_bridge.f90`: streaming upstream decoder and encoder bindings.
@@ -53,3 +53,5 @@ See [verification details](research/PROTOTYPE-STATUS.md), `COPYING`, `THIRD_PART
 The original app icon is in `native/Assets`; regenerate it with `swift scripts/make-icon.swift native/Assets` followed by `iconutil -c icns native/Assets/JTTY.iconset -o native/Assets/JTTY.icns`.
 
 See [the WSJT-X audio/CAT review](research/WSJTX-AUDIO-CAT-REVIEW.md) for architecture differences, the serial-control-line correction and remaining hardware limitations.
+
+Receive capture now compiles the pinned upstream `Audio/soundin.cpp`, `Audio/AudioDevice.cpp`, and `Audio/AudioStreamDescriptor.cpp` directly. The Qt helper owns its audio thread and event loop; the Swift app receives selected-channel PCM16 through a pipe. This replaces the prior custom capture implementations. The helper requires Qt 5.15; Homebrew currently marks Qt 5 deprecated. The playback backend remains CoreAudio.
