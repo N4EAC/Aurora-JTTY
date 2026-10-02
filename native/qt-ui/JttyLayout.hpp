@@ -146,7 +146,6 @@ void MainWindow::installJttyLayout() {
   mount(receivedLayout, ui->decodedTextBrowser);
   receivedLayout->setStretch(receivedLayout->count()-1, 1);
   ui->decodedTextBrowser->setMinimumHeight(60);
-  receivedLayout->addWidget(label(tr("Click a waterfall signal to select its Rx offset."), received));
 
   auto conversation = panel(messages, "jttyConversationPanel");
   conversation->setMinimumHeight(0);
@@ -204,8 +203,10 @@ void MainWindow::installJttyLayout() {
   auto contacts = new QHBoxLayout;
   contacts->addWidget(label(tr("Their call"), conversation));
   mount(contacts,ui->dxCallEntry);
+  ui->dxCallEntry->setClearButtonEnabled(true);
   contacts->addWidget(label(tr("Call next"), conversation));
   mount(contacts,ui->lineEdit);
+  ui->lineEdit->setClearButtonEnabled(true);
   contacts->addWidget(label(tr("Serial"), conversation));
   mount(contacts,ui->sbSerialNumber_2);
   conversationLayout->addLayout(contacts);
@@ -343,6 +344,8 @@ void MainWindow::installJttyLayout() {
       QFont font=ui->decodedTextBrowser->contentFont();font.setPointSize(size);
       ui->decodedTextBrowser->setContentFont(font);
       ui->decodedTextBrowser2->setContentFont(font);
+      ui->Tx_Message->setFont(font);
+      ui->Tx_Message->setStyleSheet(QString("font-size: %1pt;").arg(size));
     });
   }
   setMinimumSize(1080,720);
@@ -407,6 +410,7 @@ bool MainWindow::jttyLayoutSmoke() {
   auto floating=findChild<QDialog*>("jttyFloatingConversation");
   auto popout=findChild<QPushButton*>("jttyPopoutConversation");
   if(!messages || !conversation || !floating || !popout) return false;
+  if(!ui->dxCallEntry->isClearButtonEnabled() || !ui->lineEdit->isClearButtonEnabled()) return false;
   auto fontGroup=findChild<QActionGroup*>("jttyFontSizes");
   if(!fontGroup || fontGroup->actions().size()!=10 || !fontGroup->checkedAction()) return false;
   auto savedSize=fontGroup->checkedAction();
@@ -420,6 +424,7 @@ bool MainWindow::jttyLayoutSmoke() {
     if(qApp->font()!=originalUiFont || ui->monitorButton->font()!=originalButtonFont
        || ui->decodedTextBrowser->contentFont().pointSize()!=size
        || ui->decodedTextBrowser2->contentFont().pointSize()!=size
+       || ui->Tx_Message->font().pointSize()!=size
        || ui->decodedTextBrowser->toPlainText()!=savedText) return false;
   }
   savedSize->trigger();
