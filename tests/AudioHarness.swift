@@ -13,6 +13,7 @@ enum AudioHarness {
             return
         }
         if CommandLine.arguments.contains("--diagnose-usb") {
+            if #available(macOS 14.0, *) { print("Application input muted: \(AVAudioApplication.shared.isInputMuted)") }
             for device in Devices.list().filter({ $0.name.localizedCaseInsensitiveContains("USB") }) {
                 print("USB id=\(device.id) uid=\(device.uid)")
                 for (name, selector) in [("alive", kAudioDevicePropertyDeviceIsAlive), ("running", kAudioDevicePropertyDeviceIsRunningSomewhere), ("hogPID", kAudioDevicePropertyHogMode)] {
@@ -58,7 +59,8 @@ enum AudioHarness {
             print("Capture result: batches=\(received), peak=\(maximum), errors=\(errors)")
             precondition(received > 0, "No capture callbacks received")
             precondition(errors.isEmpty, errors.joined(separator: "; "))
-            print("USB capture/restart passed on \(device.name): \(received) batches, peak \(maximum), \(device.inputs) channels; no playback or PTT")
+            if maximum == 0 { print("WARNING: callbacks work, but USB samples are all zero; signal reception is NOT verified") }
+            print("USB callback/restart check completed on \(device.name): \(received) batches, peak \(maximum), \(device.inputs) channels; no playback or PTT")
             return
         }
         if CommandLine.arguments.contains("--silent-output") {

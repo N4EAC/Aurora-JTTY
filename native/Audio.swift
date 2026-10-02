@@ -69,12 +69,16 @@ final class RadioAudio {
     private var sourceFormat: AVAudioFormat?
     private var inputChannels = 1
     private var selectedChannel = 0
+    private var spectrumHistory: [Float] = []
     private let processing = DispatchQueue(label: "jtty.audio.capture")
     var onSamples: (([Int16], Float, [Float]) -> Void)?
     var onError: ((String) -> Void)?
 
     func startInput(device: AudioDevice, channel: Int) throws {
         stopInput()
+        if #available(macOS 14.0, *), AVAudioApplication.shared.isInputMuted {
+            throw AudioFailure.message("macOS has muted this app's audio input. Unmute JTTY Workbench in the menu-bar microphone controls, then retry Monitor.")
+        }
         guard let current = Devices.list().first(where: { $0.uid == device.uid && $0.inputs > 0 }) else {
             throw AudioFailure.message("Selected USB input is unavailable. Reconnect it and refresh devices.")
         }
@@ -152,8 +156,11 @@ final class RadioAudio {
 
     private func spectrum(_ samples: [Float]) -> [Float] {
         let n = 1024
+        spectrumHistory.append(contentsOf: samples)
+        if spectrumHistory.count > n { spectrumHistory.removeFirst(spectrumHistory.count - n) }
+        guard spectrumHistory.count == n else { return [] }
         var real = [Float](repeating: 0, count: n), imaginary = real, outReal = real, outImaginary = real
-        let tail = samples.suffix(n)
+        let tail = spectrumHistory.suffix(n)
         for (i, value) in tail.enumerated() { real[i] = value * (0.5 - 0.5 * cos(2 * Float.pi * Float(i) / Float(n - 1))) }
         guard let setup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(n), .FORWARD) else { return [] }
         defer { vDSP_DFT_DestroySetup(setup) }
@@ -208,7 +215,7 @@ final class RadioAudio {
         input = nil
         // CoreAudio waits for callbacks before releasing the capture context.
         if let capture = capture { jw_capture_close(capture) }
-        processing.sync { converter = nil; sourceFormat = nil }
+        processing.sync { converter = nil; sourceFormat = nil; spectrumHistory.removeAll() }
     }
     // Exercise the exact channel-selection and streaming conversion path without microphone access.
     func testCapture(_ samples: [Float], rate: Double, channels: Int, channel: Int) {

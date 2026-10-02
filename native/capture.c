@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 typedef struct {
     AudioDeviceID device;
@@ -16,6 +17,22 @@ typedef struct {
     unsigned int capacity;
     atomic_int active;
 } capture_state;
+
+static OSStatus configure_streams(capture_state *state, AudioObjectPropertyScope scope, UInt32 enabled) {
+    AudioObjectPropertyAddress address={kAudioDevicePropertyStreams,scope,kAudioObjectPropertyElementMain};
+    UInt32 bytes=0;
+    OSStatus result=AudioObjectGetPropertyDataSize(state->device,&address,0,NULL,&bytes);
+    if(result || !bytes)return result;
+    UInt32 count=bytes/sizeof(AudioStreamID);
+    bytes=(UInt32)(offsetof(AudioHardwareIOProcStreamUsage,mStreamIsOn)+count*sizeof(UInt32));
+    AudioHardwareIOProcStreamUsage *usage=calloc(1,bytes);
+    if(!usage)return -1;
+    usage->mIOProc=(void*)state->proc;usage->mNumberStreams=count;
+    for(UInt32 i=0;i<count;i++)usage->mStreamIsOn[i]=enabled;
+    address.mSelector=kAudioDevicePropertyIOProcStreamUsage;
+    result=AudioObjectSetPropertyData(state->device,&address,0,NULL,bytes,usage);
+    free(usage);return result;
+}
 
 static OSStatus receive_audio(AudioDeviceID device, const AudioTimeStamp *now,
  const AudioBufferList *input, const AudioTimeStamp *input_time,
@@ -64,6 +81,8 @@ void *jw_capture_open(uint32_t device_id,const char *name,int channels,double ra
     if(!state->samples){free(state);snprintf(error,512,"Cannot allocate input buffers");return NULL;}
     atomic_init(&state->active,1);
     result=AudioDeviceCreateIOProcID(device_id,receive_audio,state,&state->proc);
+    if(!result) result=configure_streams(state,kAudioDevicePropertyScopeInput,1);
+    if(!result) result=configure_streams(state,kAudioDevicePropertyScopeOutput,0);
     if(!result) result=AudioDeviceStart(device_id,state->proc);
     if(result){
         snprintf(error,512,"Start direct USB capture on %s failed (%d)",name,result);
