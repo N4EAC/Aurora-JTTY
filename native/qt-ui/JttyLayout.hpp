@@ -141,7 +141,7 @@ void MainWindow::installJttyLayout() {
     ui->decodedTextBrowser->erase();
   });
   receivedLayout->addLayout(receivedHeader);
-  receivedLayout->addWidget(label(tr("All decoded signals in the waterfall range"), received));
+  receivedLayout->addWidget(label(tr("All Messages"), received));
   mount(receivedLayout, ui->lh_decodes_headings_label);
   mount(receivedLayout, ui->decodedTextBrowser);
   receivedLayout->setStretch(receivedLayout->count()-1, 1);
