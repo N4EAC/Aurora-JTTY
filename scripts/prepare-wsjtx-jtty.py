@@ -146,4 +146,5 @@ edit('Audio/soundin.cpp', 'void SoundInput::stop()\n{', 'void SoundInput::stop()
 subprocess.run([sys.executable, str(root / 'scripts/deepen-jtty-debug.py'), str(source)], check=True)
 
 subprocess.run([sys.executable, str(root / 'scripts/customize-jtty-ui.py'), str(source)], check=True)
+subprocess.run([sys.executable, str(root / 'scripts/add-jtty-snr.py'), str(source)], check=True)
 print(source)

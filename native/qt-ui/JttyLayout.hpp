@@ -436,6 +436,9 @@ bool MainWindow::jttyLayoutSmoke() {
   if(ui->dxCallEntry->text()!="K1ABC/P" || ui->TxFreqSpinBox_2->value()!=1600) return false;
   Q_EMIT ui->decodedTextBrowser->selectCallsign(" 1456  CQ K1ABC", "CQ", Qt::NoModifier);
   if(ui->dxCallEntry->text()!="K1ABC/P") return false;
+  Q_EMIT ui->decodedTextBrowser->selectCallsign("181721  -7  1501  DE K6LJ", "-7", Qt::NoModifier);
+  if(ui->RxFreqSpinBox_2->value()!=1501 || m_wideGraph->rxFreq()!=1501
+     || ui->TxFreqSpinBox_2->value()!=1600 || ui->dxCallEntry->text()!="K1ABC/P") return false;
   ui->dxCallEntry->setText(originalCall);
   ui->RxFreqSpinBox_2->setValue(1400);
   ui->pbR2T_2->click();

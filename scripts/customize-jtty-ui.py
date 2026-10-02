@@ -35,7 +35,7 @@ edit('widgets/mainwindow_jtty.cpp', '''  // "Save decoded" keeps the file only i
 edit('widgets/mainwindow.cpp', '''    m_deCall = word;
     ui->dxCallEntry->setText(m_deCall);
     return;''', r'''    static QRegularExpression const header {
-      QStringLiteral("^\\s*(?:[0-2][0-9][0-5][0-9][0-5][0-9]\\s+)?([0-9]{1,4})(?:\\s|$)")};
+      QStringLiteral("^\\s*(?:[0-2][0-9][0-5][0-9][0-5][0-9]\\s+)?(?:[-+]?[0-9]{1,3}\\s+)?([0-9]{1,4})(?:\\s|$)")};
     auto const match = header.match(line);
     if (match.hasMatch()) {
       int const frequency = match.captured(1).toInt();
