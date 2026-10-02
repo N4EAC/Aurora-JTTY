@@ -100,5 +100,34 @@ path.write_text(text)
 edit('widgets/mainwindow.cpp', 'void MainWindow::startDecoderProcess ()\n{',
      'void MainWindow::startDecoderProcess ()\n{\n  return; // JTTY decodes in process; the multimode jt9 backend is unused.')
 
+# Record native device identity and stop if the selected device disappears.
+shutil.copy2(root / 'native/qt-audio/JttyCaptureRouteWatch.hpp', source / 'Audio/JttyCaptureRouteWatch.hpp')
+edit('CMakeLists.txt', 'target_link_libraries (wsjt_qtmm Qt5::Multimedia)', 'target_link_libraries (wsjt_qtmm Qt5::Multimedia)\nif(APPLE)\n  target_link_libraries(wsjt_qtmm "-framework CoreAudio" "-framework CoreFoundation")\nendif()')
+edit('Audio/soundin.cpp', '#include "Logger.hpp"', '#include "Logger.hpp"\n#include "JttyCaptureRouteWatch.hpp"')
+edit('Audio/soundin.h', 'class QAudioInput;', 'class QAudioInput;\n#ifdef Q_OS_MAC\nclass JttyCaptureRouteWatch;\n#endif')
+edit('Audio/soundin.h', '  QScopedPointer<QAudioInput> m_stream;', '  QScopedPointer<QAudioInput> m_stream;\n#ifdef Q_OS_MAC\n  QScopedPointer<JttyCaptureRouteWatch> m_routeWatch;\n#endif')
+edit('Audio/soundin.h', '  SoundInput (QObject * parent = nullptr)\n    : AudioInputSource {parent}\n    , cummulative_lost_usec_ {std::numeric_limits<qint64>::min ()}\n  {\n  }', '  SoundInput (QObject * parent = nullptr);')
+edit('Audio/soundin.cpp', 'bool SoundInput::checkStream ()', 'SoundInput::SoundInput(QObject *parent):AudioInputSource{parent},cummulative_lost_usec_{std::numeric_limits<qint64>::min()}{ }\n\nbool SoundInput::checkStream ()')
+edit('Audio/soundin.cpp', '  m_sink = sink;', '''  QAudioDeviceInfo selected;
+  for(auto const& candidate:QAudioDeviceInfo::availableDevices(QAudio::AudioInput))
+    if(candidate.deviceName()==device.deviceName()) {selected=candidate;break;}
+  if(selected.isNull()) { Q_EMIT error(tr("Selected input device is unavailable. Refresh Radio / Audio settings.")); return; }
+#ifdef Q_OS_MAC
+  m_routeWatch.reset(new JttyCaptureRouteWatch(selected.deviceName(),[this](QString message){
+    if(m_stream) m_stream->stop();
+    clearStreamDescriptor();
+    Q_EMIT error(message);
+  },[this]{return QString("qt_state=%1 qt_error=%2 processed_us=%3").arg(m_stream?int(m_stream->state()):-1).arg(m_stream?int(m_stream->error()):-1).arg(m_stream?m_stream->processedUSecs():0);}));
+  if(!m_routeWatch->valid()){Q_EMIT error(tr("Cannot uniquely identify the selected CoreAudio input device."));return;}
+#endif
+  m_sink = sink;''')
+edit('Audio/soundin.cpp', 'QAudioFormat format (device.preferredFormat())', 'QAudioFormat format (selected.preferredFormat())')
+edit('Audio/soundin.cpp', 'device.isFormatSupported (format)', 'selected.isFormatSupported (format)')
+edit('Audio/soundin.cpp', 'new QAudioInput {device, format}', 'new QAudioInput {selected, format}')
+edit('Audio/soundin.cpp', '          publishStreamDescriptor ();', '          publishStreamDescriptor ();\n#ifdef Q_OS_MAC\n          if(m_routeWatch) m_routeWatch->begin();\n#endif')
+edit('Audio/soundin.cpp', 'void SoundInput::resume ()\n{', 'void SoundInput::resume ()\n{\n  LOG_INFO("JTTY capture resume requested");\n#ifdef Q_OS_MAC\n  if(m_routeWatch){m_routeWatch->sample();if(!m_routeWatch->valid())return;}\n#endif')
+edit('Audio/soundin.cpp', 'void SoundInput::suspend ()\n{', 'void SoundInput::suspend ()\n{\n  LOG_INFO("JTTY capture suspend requested");')
+edit('Audio/soundin.cpp', 'void SoundInput::stop()\n{', 'void SoundInput::stop()\n{\n  LOG_INFO("JTTY capture stop requested");\n#ifdef Q_OS_MAC\n  m_routeWatch.reset();\n#endif')
+
 subprocess.run([sys.executable, str(root / 'scripts/customize-jtty-ui.py'), str(source)], check=True)
 print(source)
