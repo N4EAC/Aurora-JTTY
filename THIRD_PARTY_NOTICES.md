@@ -1,6 +1,6 @@
 # Third-party notices
 
-JTTY Workbench is an independent, unofficial application. Its new adapter, client and UI code are licensed under GNU GPL version 3 or later. It links unmodified WSJT-X source pinned at commit 567ad29ce6abf3d4a44f181cdbc7ceba0d73e5f4 (v3.2.0-rc1). Original files and notices remain in upstream/wsjtx. COPYING contains GPLv3; doc/common/license.adoc in upstream grants the later-version option.
+JTTY Workbench is an independent, unofficial application. Its new adapter, client and UI code are licensed under GNU GPL version 3 or later. The original Swift client links selected unmodified WSJT-X source; the replacement Qt client applies a reproducible JTTY-only source overlay to WSJT-X pinned at commit 567ad29ce6abf3d4a44f181cdbc7ceba0d73e5f4 (v3.2.0-rc1). Original files and notices remain in upstream/wsjtx. COPYING contains GPLv3; doc/common/license.adoc in upstream grants the later-version option.
 
 Upstream attribution (verbatim from the documentation license notice):
 
@@ -24,3 +24,5 @@ Before distributing a binary, provide the corresponding covered source and build
 Hamlib (https://hamlib.github.io/) is dynamically linked as an external Homebrew dependency. Its library is licensed under LGPL version 2.1 or later; original notices remain in its source and installed package. No Hamlib binary is bundled in this developer app. Redistributed libraries require their applicable source and notice obligations.
 
 The receive helper compiles unmodified WSJT-X Audio/SoundInput, AudioDevice and AudioStreamDescriptor source from the pinned checkout, under the project's GPLv3-or-later terms. Its logging is connected to a small stderr facade instead of WSJT-X's Boost logger; no upstream file is edited. Qt 5 Core and Multimedia are external Homebrew dependencies available under GPLv3 or LGPLv3 (and commercial licenses). This GPLv3 application uses the open-source terms; Qt frameworks and plugins are not bundled in the developer app. Preserve applicable Qt notices and source/build obligations when redistributing its binaries.
+
+The replacement Qt client builds WSJT-X MainWindow, Configuration, receive and transmit audio, messaging, and transceiver code directly. Its source overlay changes application identity/icon, restricts mode selection to JTTY, and adds diagnostics and a mode restriction smoke check. The reproducible overlay is scripts/prepare-wsjtx-jtty.py; the original source and copyright notices remain unchanged in the pinned upstream submodule. Boost is dynamically linked as an external Homebrew dependency under the Boost Software License 1.0.

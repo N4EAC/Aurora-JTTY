@@ -1,23 +1,27 @@
 # JTTY Workbench
 
-An independent macOS JTTY client using the unmodified WSJT-X JTTY core, SwiftUI, WSJT-X Qt audio capture, CoreAudio playback and Hamlib. GPLv3 or later. Version 0.3 provides live receive, waterfall, audio device/channel selectors, a transmit queue, eight editable macros, CAT frequency/mode control, PTT, tune, contact logging and WAV tools.
+The current client is a JTTY-only fork of WSJT-X, using its Qt interface, receive/transmit audio, JTTY messaging, waterfall, frequency selector, station settings and Hamlib CAT/PTT control. GPLv3 or later. The original Swift client remains in the repository for reference.
 
-Open `build/JTTY Workbench.app`. Follow [the FT-710 setup guide](docs/FT-710-SETUP.md) before transmitting. Start with receive monitoring. Transmit is disabled at launch until explicitly enabled.
+Open `build/JTTY Workbench WSJTX.app`. This replacement uses separate settings from your installed WSJT-X and the old Swift client. Follow [the replacement setup guide](docs/WSJTX-JTTY-SETUP.md). Configure your callsign/grid, **Yaesu FT-710**, serial CAT port, and USB audio input/output in **Settings**. JTTY is the sole selectable operating mode. It includes upstream JTTY frequency presets, including 7.090 MHz for 40 m.
 
-Software and simulated-radio tests pass. Some USB capture runs passed, but later GUI routing and silence failures remain unresolved. CAT/receive lifecycle tests pass with simulated input and a dummy radio; actual USB receive continuity, RF transmission and over-the-air interoperability still require hardware validation. This is a development client, not a released installer.
+The October 2 failed test showed the selected USB device becoming unavailable and returning under a new CoreAudio device ID while CAT polls continued. The replacement removes the custom Swift/CAT/audio-helper lifecycle. Hardware receive continuity and RF operation still need a radio test; software tests do not establish that the USB failure is fixed.
 
-## Build
+## Build the WSJT-X-based client
 
 With Xcode command-line tools and Homebrew:
 
 ```sh
-brew install gcc fftw cmake hamlib qt@5
-sh scripts/build.sh
-sh scripts/test.sh
-open "build/JTTY Workbench.app"
+brew install gcc fftw cmake hamlib qt@5 boost libusb portaudio
+sh scripts/build-wsjtx-jtty.sh
+sh scripts/test-wsjtx-jtty.sh
+open "build/JTTY Workbench WSJTX.app"
 ```
 
-Keep the developer bundle in this workspace's `build/` directory. It depends on Homebrew libraries and the local Python client. It is not packaged or notarized for distribution.
+The source overlay is recreated from the unchanged pinned submodule by `scripts/prepare-wsjtx-jtty.py`. Other mode actions, quick buttons, selection slots, saved-profile mode restoration and command-line mode selection are restricted to JTTY; the common DSP library is retained intact. Upstream copyright and license notices are preserved.
+
+The developer bundle depends on this machine's Homebrew libraries. It is not packaged or notarized for distribution. Keep it in the workspace.
+
+The old Swift build remains available via `sh scripts/build.sh` and `sh scripts/test.sh`, and is no longer the preferred radio client.
 
 Clone this repository with `git clone --recurse-submodules` or run `git submodule update --init --recursive` after cloning.
 
