@@ -1,6 +1,6 @@
-# Proposed JTTY layout — preview only
+# JTTY layout
 
-The current app is unchanged. Mockup: `jtty-layout-proposal.png`; editable source: `jtty-layout-proposal.svg` and its generator.
+Implemented with the original live Qt widgets. Reference mockup: `jtty-layout-proposal.png`; editable source: `jtty-layout-proposal.svg` and its generator.
 
 Top strip: existing band/preset selector and dial display, Rx/Tx offsets, frequency tolerance, both copy-frequency actions; mode/CAT status, radio/audio settings, Monitor, Halt Tx, Tune and Log contact.
 
@@ -16,3 +16,5 @@ Implementation requirements:
 - Clear actions must use the matching upstream history/cursor cleanup rather than clearing a QTextEdit that is re-rendered from retained history on the next decode.
 - Show CAT, audio and TX status accurately; retain existing disconnected/busy/transmitting guards. Sample data belongs only to this proposal.
 - Run existing JTTY receive and queued transmit loopback checks, startup checks, and verify frequency copying, tolerance, macros, docking, resize, settings, Stop/Halt Tx, tune and log behavior before delivering a modified app. Physical USB/CAT/PTT validation remains a separate hardware check.
+
+The conversation can be popped out and docked back without restarting capture. Enter sends the draft; F1–F8 use the existing templates in both windows. Waterfall display controls are available through its header button. New geometry and splitter preferences are saved separately from upstream layout preferences.

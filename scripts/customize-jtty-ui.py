@@ -63,7 +63,7 @@ cleanup += '''
   ui->menuFilters->menuAction()->setVisible(false);
   ui->actionUse_Dark_Style->setChecked(false);
   ui->actionUse_Dark_Style->setVisible(false);
-  setDecodeTitles(tr("Received messages"), tr("Conversation on selected frequency"));
+  setDecodeTitles(tr("Received messages"), tr("Conversation"));
   ui->Tx_Message->setPlaceholderText(tr("Type a JTTY message — Enter to send"));
   setWindowTitle("JTTY Workbench");
 '''
@@ -130,3 +130,27 @@ start = text.index('          if (prerelease_notice_pending)')
 end = text.index('#ifdef WSJT_ENABLE_LIVE_AUDIO_TEST', start)
 text = text[:start] + text[end:]
 p.write_text(text)
+
+shutil.copy2(root/'native/qt-ui/JttyLayout.hpp',source/'widgets/JttyLayout.hpp')
+edit('widgets/mainwindow.h', '  QString jttyOperatingMode() const { return m_mode; }', '  void installJttyLayout();\n  bool jttyLayoutSmoke();\n  QString jttyOperatingMode() const { return m_mode; }')
+edit('widgets/mainwindow.cpp', '// this must be the last statement of constructor', '  installJttyLayout();\n\n// this must be the last statement of constructor')
+p=source/'widgets/mainwindow.cpp';p.write_text(p.read_text()+'\n#include "JttyLayout.hpp"\n')
+# The implementation declaration must be known when Qt instantiates findChild.
+edit('main.cpp', '                std::cout << "JTTY-only mode restriction passed" << std::endl;', '''                std::cout << "JTTY-only mode restriction passed" << std::endl;
+                if (!w.jttyLayoutSmoke()) {
+                  std::cerr << "JTTY layout/docking/frequency controls failed" << std::endl;
+                  a.exit(EXIT_FAILURE); return;
+                }
+                std::cout << "JTTY layout/docking/frequency controls passed" << std::endl;''')
+edit('widgets/mainwindow.h', '  bool jttyLayoutSmoke();', '''  bool jttyLayoutSmoke();
+  void saveJttyLayout();
+#ifdef WSJT_ENABLE_LIVE_AUDIO_TEST
+  qint64 jttyLayoutSubmitFixture(QString message,bool macro);
+#endif''')
+edit('widgets/mainwindow_settings.cpp', 'void MainWindow::writeSettings()\n{', 'void MainWindow::writeSettings()\n{\n  saveJttyLayout();')
+# Exercise the real floating composer/Enter and F1 routes through the existing
+# WAV loopback fixture (exactly two queued requests, one continuous playout).
+edit('JttyTxLoopbackTestController.cpp', 'm_window->submitJttyText (contestExchangeMessage ())', 'm_window->jttyLayoutSubmitFixture (contestExchangeMessage (),false)')
+edit('JttyTxLoopbackTestController.cpp', 'm_window->submitJttyText (\n    adjacentStructuredFramesMessage ())', 'm_window->jttyLayoutSubmitFixture (\n    adjacentStructuredFramesMessage (),true)')
+# Capture before shutdown closes the embedded waterfall.
+edit('widgets/mainwindow.cpp', 'void MainWindow::closeEvent(QCloseEvent * e)\n{', 'void MainWindow::closeEvent(QCloseEvent * e)\n{\n  auto const preview=qEnvironmentVariable("JTTY_UI_PREVIEW");\n  if(!preview.isEmpty()) grab().save(preview);')
