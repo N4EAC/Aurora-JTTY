@@ -75,7 +75,9 @@ void MainWindow::installJttyLayout() {
   frequencies->setContentsMargins(16, 12, 16, 12);
   frequencies->setHorizontalSpacing(16);
   auto dial = new QVBoxLayout;
-  dial->addWidget(label(tr("RADIO FREQUENCY · MHz"), top));
+  auto radioMode=label(tr("CAT mode unavailable"),top);
+  radioMode->setObjectName("jttyRadioMode");
+  dial->addWidget(radioMode);
   mount(dial, ui->labDialFreq);
   ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
   auto preset = new QHBoxLayout;
@@ -301,7 +303,25 @@ void MainWindow::installJttyLayout() {
     setProperty("jttyAudioSystemTraceRequested",false);
   });
   connect(m_soundInput,&AudioInputSource::error,this,&MainWindow::jttyNoteInputError);
-  auto update = [this,cat,scope,devices,counter,reading,meter] {
+  auto update = [this,cat,scope,devices,counter,reading,meter,radioMode] {
+    QString mode;
+    if(m_config.is_transceiver_online()) {
+      switch(m_rigState.mode()) {
+        case Transceiver::CW: mode="CW"; break;
+        case Transceiver::CW_R: mode="CW-R"; break;
+        case Transceiver::USB: mode="USB"; break;
+        case Transceiver::LSB: mode="LSB"; break;
+        case Transceiver::FSK: mode="RTTY"; break;
+        case Transceiver::FSK_R: mode="RTTY-R"; break;
+        case Transceiver::DIG_U: mode="DATA-USB"; break;
+        case Transceiver::DIG_L: mode="DATA-LSB"; break;
+        case Transceiver::AM: mode="AM"; break;
+        case Transceiver::FM: mode="FM"; break;
+        case Transceiver::DIG_FM: mode="DATA-FM"; break;
+        default: break;
+      }
+    }
+    radioMode->setText(mode.isEmpty() ? tr("CAT mode unavailable") : mode);
     ui->rh_decodes_title_label->setText(tr("Conversation"));
     if (reading) meter->setValue(reading->text().section(' ',0,0).toInt());
     bool const connected=m_config.rig_name()!="None" && m_config.is_transceiver_online();
