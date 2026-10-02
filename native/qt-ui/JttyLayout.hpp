@@ -78,7 +78,7 @@ void MainWindow::installJttyLayout() {
   auto dial = new QVBoxLayout;
   dial->addWidget(label(tr("RADIO FREQUENCY · MHz"), top));
   mount(dial, ui->labDialFreq);
-  ui->labDialFreq->setStyleSheet("background: transparent; font-weight: bold; border: none;");
+  ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
   auto preset = new QHBoxLayout;
   mount(preset, ui->bandComboBox);
   mount(preset, ui->readFreq);
@@ -330,15 +330,15 @@ void MainWindow::installJttyLayout() {
     });
   }
   applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
-  auto fontMenu=ui->menuView->addMenu(tr("Font size"));
+  auto fontMenu=ui->menuView->addMenu(tr("Message font size"));
   auto fontAction=new QWidgetAction(fontMenu);
   auto fontSize=new QSpinBox(fontMenu);
   fontSize->setObjectName("jttyFontSize");
   fontSize->setRange(8,17); fontSize->setSuffix(tr(" pt"));
-  fontSize->setValue(qBound(8,m_settings->value("MainWindow/JttyFontSize",11).toInt(),17));
+  fontSize->setValue(qBound(8,m_settings->value("MainWindow/JttyMessageFontSize",m_settings->value("MainWindow/JttyFontSize",11)).toInt(),17));
   fontAction->setDefaultWidget(fontSize); fontMenu->addAction(fontAction);
   connect(fontSize,qOverload<int>(&QSpinBox::valueChanged),this,[this](int size) {
-    m_settings->setValue("MainWindow/JttyFontSize",size);
+    m_settings->setValue("MainWindow/JttyMessageFontSize",size);
     applyApplicationStyle(qApp->font(),m_useDarkStyle);
   });
   setMinimumSize(1080,720);
@@ -407,9 +407,12 @@ bool MainWindow::jttyLayoutSmoke() {
   if(!fontSize || fontSize->minimum()!=8 || fontSize->maximum()!=17) return false;
   int savedSize=fontSize->value();
   auto savedText=ui->decodedTextBrowser->toPlainText();
+  auto originalUiFont=qApp->font();
+  auto originalButtonFont=ui->monitorButton->font();
   for(int size : {8,17}) {
     fontSize->setValue(size);
-    if(qApp->font().pointSize()!=size || ui->decodedTextBrowser->contentFont().pointSize()!=size
+    if(qApp->font()!=originalUiFont || ui->monitorButton->font()!=originalButtonFont
+       || ui->decodedTextBrowser->contentFont().pointSize()!=size
        || ui->decodedTextBrowser2->contentFont().pointSize()!=size
        || ui->decodedTextBrowser->toPlainText()!=savedText) return false;
   }
