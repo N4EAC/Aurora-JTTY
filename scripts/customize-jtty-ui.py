@@ -119,3 +119,14 @@ edit('main.cpp', '                std::cout << "JTTY-only mode restriction passe
      '''                std::cout << "JTTY-only mode restriction passed" << std::endl;
                 auto const preview = qEnvironmentVariable("JTTY_UI_PREVIEW");
                 if (!preview.isEmpty()) w.grab().save(preview);''')
+
+# The independent client must not inherit an upstream release-candidate cutoff.
+p = source / 'main.cpp'
+text = p.read_text()
+start = text.index('      auto const prerelease_expiration =')
+end = text.index('      auto const original_style_sheet', start)
+text = text[:start] + text[end:]
+start = text.index('          if (prerelease_notice_pending)')
+end = text.index('#ifdef WSJT_ENABLE_LIVE_AUDIO_TEST', start)
+text = text[:start] + text[end:]
+p.write_text(text)

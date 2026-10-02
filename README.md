@@ -1,6 +1,6 @@
 # JTTY Workbench
 
-The current client is a JTTY-only fork of WSJT-X, using its Qt interface, receive/transmit audio, JTTY messaging, waterfall, frequency selector, station settings and Hamlib CAT/PTT control. GPLv3 or later. The original Swift client remains in the repository for reference.
+The current client is a JTTY-only fork of WSJT-X, using its Qt interface, receive/transmit audio, JTTY messaging, waterfall, frequency selector, station settings and Hamlib CAT/PTT control. GPLv3 or later. This independent build has no date-based expiration. The original Swift client remains in the repository for reference.
 
 Open `build/JTTY Workbench WSJTX.app`. This replacement uses separate settings from your installed WSJT-X and the old Swift client. Follow [the replacement setup guide](docs/WSJTX-JTTY-SETUP.md). Configure your callsign/grid, **Yaesu FT-710**, serial CAT port, and USB audio input/output in **Settings**. JTTY is the sole selectable operating mode. The interface uses a neutral gray theme with lighter message panels, JTTY-specific labels/help, and menus/settings limited to relevant features. It includes upstream JTTY frequency presets, including 7.090 MHz for 40 m.
 
