@@ -3,6 +3,7 @@
 import io
 import pathlib
 import shutil
+import sys
 import subprocess
 import tarfile
 root = pathlib.Path(__file__).resolve().parents[1]
@@ -99,4 +100,5 @@ path.write_text(text)
 edit('widgets/mainwindow.cpp', 'void MainWindow::startDecoderProcess ()\n{',
      'void MainWindow::startDecoderProcess ()\n{\n  return; // JTTY decodes in process; the multimode jt9 backend is unused.')
 
+subprocess.run([sys.executable, str(root / 'scripts/customize-jtty-ui.py'), str(source)], check=True)
 print(source)

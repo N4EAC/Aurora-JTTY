@@ -1,0 +1,29 @@
+/* Neutral control surfaces with distinct, readable conversation panels. */
+QWidget { color: #24272b; background-color: #d0d2d5; }
+QMainWindow, QDialog { background-color: #d0d2d5; }
+QTextEdit, QPlainTextEdit, QLineEdit, QAbstractSpinBox, QComboBox, QAbstractItemView {
+  background-color: #f0f1f2; color: #202327;
+  border: 1px solid #92979e; border-radius: 4px; padding: 3px;
+  selection-background-color: #586b7e; selection-color: #ffffff;
+}
+QTextEdit#decodedTextBrowser, QTextEdit#decodedTextBrowser2 {
+  background-color: #e8eaed; border: 1px solid #858b93; padding: 7px;
+}
+QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label {
+  background-color: #b7bcc2; color: #202327; padding: 5px; font-weight: bold;
+  border-radius: 4px;
+}
+QPushButton { background-color: #e1e3e6; border: 1px solid #969ca4; border-radius: 4px; padding: 4px 7px; }
+QPushButton:hover { background-color: #eff0f2; }
+QPushButton:pressed { background-color: #b2b8c0; }
+QPushButton:disabled, QAbstractSpinBox:disabled { color: #737981; }
+QLineEdit:focus, QComboBox:focus, QAbstractSpinBox:focus { border: 2px solid #586b7e; }
+QGroupBox { border: 1px solid #a0a6ad; border-radius: 5px; margin-top: 12px; padding-top: 10px; }
+QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 4px; }
+QMenuBar, QMenu { background-color: #d0d2d5; color: #202327; }
+QMenu::item:selected { background-color: #586b7e; color: white; }
+QTabWidget::pane { border: 1px solid #9ba1a9; }
+QTabBar::tab { background-color: #babfc6; padding: 6px 10px; border: 1px solid #9ba1a9; }
+QTabBar::tab:selected { background-color: #e1e3e6; }
+QToolTip { background-color: #f0f1f2; color: #202327; border: 1px solid #92979e; }
+QSplitter::handle { background-color: #9ba1a9; }

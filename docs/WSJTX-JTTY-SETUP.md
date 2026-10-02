@@ -16,3 +16,6 @@ Diagnostics:
 Rotated logs are under the `logs/` subdirectory. The earlier Swift app's `diagnostics.log` remains available in the same parent directory. The Qt app records selected input, rate/channel, audio state/error, and upstream rig diagnostics. No successful physical receive/transmit test is claimed from the software loopback tests.
 
 This workspace developer app uses external Homebrew libraries and is not a portable installer.
+
+
+The gray interface labels its left pane **Received messages** and its right pane **Conversation on selected frequency**. Type in the field beside **Send message**, or edit macro templates in the fields beneath F1–F8. **Help → JTTY User Guide** contains operating instructions. Multimode decode parameters, astronomy/echo windows, Fox/Hound, tone-spacing options, and unrelated guides are hidden. Copyright and source-project attribution remain in the legal notices.

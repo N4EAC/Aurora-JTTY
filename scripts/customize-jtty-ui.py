@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Apply presentation changes to the prepared JTTY-only source tree."""
+import pathlib
+import re
+import shutil
+import sys
+import xml.etree.ElementTree as ET
+root = pathlib.Path(__file__).resolve().parents[1]
+source = pathlib.Path(sys.argv[1])
+def edit(name, old, new):
+    path = source / name
+    text = path.read_text()
+    assert old in text, (name, old[:100])
+    path.write_text(text.replace(old, new))
+
+# Leave attribution documents and the copyright dialog unchanged. Replace only
+# operational text literals, never includes, identifiers or source URLs.
+for name in ['main.cpp', 'Configuration.cpp', 'widgets/mainwindow.cpp', 'widgets/mainwindow_settings.cpp', 'widgets/mainwindow_show_messages.cpp']:
+    path = source / name
+    def brand(match):
+        value = match.group()
+        if 'http' not in value:
+            value = value.replace('WSJT-X™', 'JTTY Workbench').replace('WSJT-X', 'JTTY Workbench')
+        return value
+    path.write_text(re.sub(r'"(?:[^"\\]|\\.)*"', brand, path.read_text()))
+
+menus = {
+ 'menuFile': {'actionOpen','actionOpen_next_in_directory','actionDecode_remaining_files_in_directory','actionDelete_all_wav_files_in_SaveDir','actionErase_ALL_TXT','actionErase_wsjtx_log_adi','actionErase_Tx_Log','actionErase_Ignore_List','reset_cabrillo_log_action','actionExport_Cabrillo_log','actionOpen_log_directory','actionSettings','actionExit'},
+ 'menuView': {'actionWide_Waterfall','contest_log_action','actionColors','actionBand_Buttons'},
+ 'menuDecode': {'actionDisable_clicks_on_waterfall','actionFull_Duplex_Mode'},
+ 'menuMode': {'actionJTTY'},
+ 'menuHelp': {'actionOnline_User_Guide','actionCopyright_Notice','actionTrademark_Policy','actionAbout'},
+ 'menuTools': set(),
+}
+tree = ET.parse(source / 'widgets/mainwindow.ui')
+removed = set()
+for widget in tree.iter('widget'):
+    name = widget.get('name')
+    if name in menus:
+        for action in list(widget.findall('addaction')):
+            if action.get('name') not in menus[name]:
+                removed.add(action.get('name')); widget.remove(action)
+for action in tree.iter('action'):
+    if action.get('name') in removed:
+        for prop in list(action.findall('property')):
+            if prop.get('name') == 'shortcut': action.remove(prop)
+    for text in action.iter('string'):
+        text.text = (text.text or '').replace('WSJT-X™', 'JTTY Workbench').replace('WSJT-X', 'JTTY Workbench')
+for text in tree.iter('string'):
+    if text.text == 'WSJT-X™   by K1JT et al.': text.text = 'JTTY Workbench'
+    if text.text == 'Online User Guide': text.text = 'JTTY User Guide'
+ET.indent(tree, space=' ')
+tree.write(source / 'widgets/mainwindow.ui', encoding='UTF-8', xml_declaration=True)
+
+# These operational controls are inapplicable to a continuous JTTY chat.
+# Apply after the upstream mode layout so saved settings cannot re-show them.
+hide_widgets = ['txFirstCheckBox','rptSpinBox','cbAutoSeq','respondComboBox','cbHoldTxFreq','pbR2T','pbT2R','DecodeButton','autoButton','cbSWL','cbShMsgs','cbFast9','cbCQonly','pbBestSP','band_hopping_group_box','cbBypass']
+cleanup = '\n'.join(f'  ui->{name}->hide();' for name in hide_widgets)
+cleanup += '''
+  m_reportLabel->hide();
+  setTrPeriodVisible(false);
+  ui->menuTools->menuAction()->setVisible(false);
+  ui->menuFilters->menuAction()->setVisible(false);
+  ui->actionUse_Dark_Style->setChecked(false);
+  ui->actionUse_Dark_Style->setVisible(false);
+  setDecodeTitles(tr("Received messages"), tr("Conversation on selected frequency"));
+  ui->Tx_Message->setPlaceholderText(tr("Type a JTTY message — Enter to send"));
+  setWindowTitle("JTTY Workbench");
+'''
+edit('widgets/mainwindow.cpp', '  monitor(true);\n}\n\n\nvoid MainWindow::on_actionMSK144_triggered()', '  monitor(true);\n'+cleanup+'}\n\n\nvoid MainWindow::on_actionMSK144_triggered()')
+# Make saved dark-mode preferences consistent with the neutral gray theme.
+edit('widgets/mainwindow_settings.cpp', 'ui->actionUse_Dark_Style->setChecked(', 'ui->actionUse_Dark_Style->setChecked(false && ')
+
+# Keep settings indices stable: hide tabs rather than removing their objects.
+config_hide = ['enable_VHF_features_check_box','auto_astro_check_box','repeat_Tx_check_box','decode_at_52s_check_box','single_decode_check_box','alternate_bindings_check_box','quick_call_check_box','disable_TX_on_73_check_box','force_call_1st_check_box','enable_Wait_features_check_box','azel_path_group_box','groupBox_5','groupBox_10','groupBox_6','gbSpecialOpActivity']
+config_cleanup = '\n'.join(f'  ui_->{name}->hide();' for name in config_hide)
+config_cleanup += '\n  ui_->configuration_tabs->setTabVisible(ui_->configuration_tabs->indexOf(ui_->tx_macros_tab), false);'
+config_cleanup += '\n  ui_->configuration_tabs->setTabVisible(ui_->configuration_tabs->indexOf(ui_->filters_tab), false);'
+edit('Configuration.cpp', '  return QDialog::exec();', config_cleanup+'\n  return QDialog::exec();')
+
+# Gray theme follows fonts across all settings changes and auxiliary windows.
+css = (root/'native/qt-ui/gray.qss').read_text()
+edit('qt_helpers.cpp', '  return style_sheet + "* {" + font_as_stylesheet (font) + \'}\';',
+     '  return "* {" + font_as_stylesheet (font) + \'}\' + QString::fromUtf8(R"JTTYGRAY('+css+')JTTYGRAY");')
+
+edit('widgets/About.cpp', 'WSJT-X™ v', 'JTTY Workbench v')
+edit('widgets/About.cpp', 'WSJT-X™ implements a number of digital modes designed for <br />"\n    "weak-signal Amateur Radio communication.', 'JTTY Workbench provides keyboard-to-keyboard JTTY communication.<br />"\n    "Based on the open-source WSJT-X project.')
+edit('widgets/About.cpp', 'WSJT-X™ is licensed', 'JTTY Workbench is licensed')
+# The original copyright list and GPL/source-project attribution remain intact.
+edit('widgets/SplashScreen.cpp', ': QSplashScreen {QPixmap {":/splash.png"}, Qt::WindowStaysOnTopHint}', ': QSplashScreen {[] { QPixmap image(640, 340); image.fill(QColor("#d0d2d5")); return image; }(), Qt::WindowStaysOnTopHint}')
+path=source/'widgets/SplashScreen.cpp';text=path.read_text().replace('WSJT-X™','JTTY Workbench').replace('WSJT-X startup','JTTY Workbench startup');text=text.replace('Send issue reports to https://wsjtx.groups.io, and be sure to save .wav<br />"\n    "files where appropriate.', 'JTTY keyboard-to-keyboard radio communication.<br />"\n    "Choose your radio and USB audio interface in Settings.');text=text.replace('Open the Help menu and select Release Notes for more details.', 'Open Help → JTTY User Guide for operating instructions.');path.write_text(text)
+# Add practical JTTY help in place of the generic multimode manual.
+p=source/'widgets/mainwindow.cpp';text=p.read_text();anchor='void MainWindow::on_actionOnline_User_Guide_triggered()';start=text.index(anchor);body=text.index('{',start);end=text.index('\n}',body)
+text=text[:body]+'''{
+  QMessageBox::information(this, tr("JTTY User Guide"),
+    tr("Configure your callsign, radio CAT/PTT, and USB input/output in Settings.\\n\\n"
+       "Choose a JTTY dial frequency and press Monitor. Received messages appear in the left panel; "
+       "the right panel follows the selected audio frequency. Click the waterfall to select a signal.\\n\\n"
+       "Type up to 80 characters in the message field. Press Enter or Send message to transmit. "
+       "F1–F8 send macros; edit their text in the fields beneath the buttons. Halt Tx stops transmission."));
+''' + text[end:];p.write_text(text)
+# App icon in About/splash is the original JTTY icon, too.
+for p in (source/'icons').rglob('icon_128x128.png'):
+    shutil.copy2(root/'native/Assets/JTTY.iconset/icon_128x128.png', p)
+
+# Rebrand settings and waterfall tooltips as well as the main menus.
+for name in ['Configuration.ui', 'widgets/widegraph.ui']:
+    path = source / name
+    tree = ET.parse(path)
+    for text in tree.iter('string'):
+        if text.text and 'http' not in text.text:
+            text.text = text.text.replace('WSJT-X™','JTTY Workbench').replace('WSJT-X','JTTY Workbench')
+    ET.indent(tree, space=' ')
+    tree.write(path, encoding='UTF-8', xml_declaration=True)
+edit('widgets/mainwindow.cpp', '    progressBar.setVisible(true);', '    progressBar.setVisible(m_transmitting);')
+
+# Save an authentic widget rendering from the isolated startup smoke test.
+edit('main.cpp', '                std::cout << "JTTY-only mode restriction passed" << std::endl;',
+     '''                std::cout << "JTTY-only mode restriction passed" << std::endl;
+                auto const preview = qEnvironmentVariable("JTTY_UI_PREVIEW");
+                if (!preview.isEmpty()) w.grab().save(preview);''')
