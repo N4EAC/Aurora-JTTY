@@ -16,6 +16,8 @@
 #include <QProcess>
 #include <QDir>
 #include <QDateTime>
+#include <QActionGroup>
+#include <QMenu>
 
 class JttyConversationWindow final : public QDialog {
 public:
@@ -75,7 +77,7 @@ void MainWindow::installJttyLayout() {
   auto dial = new QVBoxLayout;
   dial->addWidget(label(tr("RADIO FREQUENCY · MHz"), top));
   mount(dial, ui->labDialFreq);
-  ui->labDialFreq->setStyleSheet("color: #29323a; background: transparent; font-size: 28px; font-weight: bold; border: none;");
+  ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
   auto preset = new QHBoxLayout;
   mount(preset, ui->bandComboBox);
   mount(preset, ui->readFreq);
@@ -260,6 +262,7 @@ void MainWindow::installJttyLayout() {
   displayControls->setCheckable(true);
   auto waterfallControls = m_wideGraph->findChild<QCheckBox*>("cbControls");
   if (waterfallControls) {
+    waterfallControls->hide();
     waterfallControls->setChecked(m_settings->value("MainWindow/JttyWaterfallControls",false).toBool());
     displayControls->setChecked(waterfallControls->isChecked());
     connect(displayControls,&QPushButton::toggled,waterfallControls,&QCheckBox::setChecked);
@@ -300,7 +303,11 @@ void MainWindow::installJttyLayout() {
   auto update = [this,cat,scope,devices,counter,reading,meter] {
     ui->rh_decodes_title_label->setText(tr("Conversation"));
     if (reading) meter->setValue(reading->text().section(' ',0,0).toInt());
-    cat->setText(m_config.rig_name() == "None" ? tr("○ Radio not selected") : (m_config.is_transceiver_online() ? tr("● CAT connected") : tr("○ CAT disconnected")));
+    bool const connected=m_config.rig_name()!="None" && m_config.is_transceiver_online();
+    cat->setTextFormat(Qt::RichText);
+    cat->setText(QStringLiteral("<span style='color:%1'>●</span> %2")
+      .arg(connected ? "#27b85c" : "#89929d",
+           m_config.rig_name()=="None" ? tr("Radio not selected") : (connected ? tr("CAT connected") : tr("CAT disconnected"))));
     scope->setText(tr("Rx %1 Hz · ±%2 Hz · traffic near this frequency").arg(ui->RxFreqSpinBox_2->value()).arg(ui->sbFtol_2->value()));
     counter->setText(tr("%1 / 80 characters").arg(ui->Tx_Message->text().size()));
     devices->setText(tr("RX · %1   |   OUT · %2   |   %3").arg(!m_jttyInputError.isEmpty() ? tr("%1 (unavailable)").arg(m_jttyInputName.isEmpty()?tr("Input"):m_jttyInputName) : (m_config.audio_input_device().isNull() ? tr("No input selected") : m_config.audio_input_device().deviceName()),m_config.audio_output_device().isNull() ? tr("No output selected") : m_config.audio_output_device().deviceName(),!m_jttyInputError.isEmpty() ? tr("Input error · Monitor stopped") : (m_transmitting ? tr("Transmission active / queued") : (m_monitoring ? tr("Monitoring") : tr("Monitor stopped")))));
@@ -308,6 +315,20 @@ void MainWindow::installJttyLayout() {
   auto timer = new QTimer(root); timer->setInterval(250);
   connect(timer,&QTimer::timeout,this,update); timer->start(); update();
   setCentralWidget(root);
+  auto themes=ui->menuView->addMenu(tr("Themes"));
+  auto themeGroup=new QActionGroup(this);
+  themeGroup->setExclusive(true);
+  for(bool dark : {false,true}) {
+    auto action=themes->addAction(dark ? tr("Dark") : tr("Light gray"));
+    action->setObjectName(dark ? "jttyDarkTheme" : "jttyLightTheme");
+    action->setCheckable(true); themeGroup->addAction(action);
+    action->setChecked(m_settings->value("MainWindow/JttyDarkTheme",false).toBool()==dark);
+    connect(action,&QAction::triggered,this,[this,dark] {
+      m_settings->setValue("MainWindow/JttyDarkTheme",dark);
+      applyApplicationStyle(qApp->font(),dark);
+    });
+  }
+  applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
   setMinimumSize(1080,720);
   resize(1280,1060);
   restoreGeometry(m_settings->value("MainWindow/JttyLayoutGeometry").toByteArray());
@@ -347,6 +368,24 @@ bool MainWindow::jttyLayoutSmoke() {
   auto floating=findChild<QDialog*>("jttyFloatingConversation");
   auto popout=findChild<QPushButton*>("jttyPopoutConversation");
   if(!messages || !conversation || !floating || !popout) return false;
+  auto darkTheme=findChild<QAction*>("jttyDarkTheme");
+  auto lightTheme=findChild<QAction*>("jttyLightTheme");
+  auto controls=findChild<QPushButton*>("jttyWaterfallControls");
+  auto checkbox=m_wideGraph->findChild<QCheckBox*>("cbControls");
+  auto controlPanel=m_wideGraph->findChild<QWidget*>("controls_widget");
+  if(!darkTheme || !lightTheme || !controls || !checkbox || !controlPanel || !checkbox->isHidden()) return false;
+  bool savedDark=m_settings->value("MainWindow/JttyDarkTheme",false).toBool();
+  darkTheme->trigger();
+  if(!darkTheme->isChecked() || lightTheme->isChecked() || !qApp->styleSheet().contains("#262a30")) return false;
+  lightTheme->trigger();
+  if(!lightTheme->isChecked() || darkTheme->isChecked() || !qApp->styleSheet().contains("#d0d2d5")) return false;
+  (savedDark ? darkTheme : lightTheme)->trigger();
+  bool savedControls=controls->isChecked();
+  controls->setChecked(true);
+  if(!checkbox->isChecked() || controlPanel->isHidden()) return false;
+  controls->setChecked(false);
+  if(checkbox->isChecked() || !controlPanel->isHidden()) return false;
+  controls->setChecked(savedControls);
   auto originalSize=size();
   resize(width(),820);
   QApplication::processEvents();
