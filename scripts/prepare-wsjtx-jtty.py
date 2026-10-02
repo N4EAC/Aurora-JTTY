@@ -129,5 +129,7 @@ edit('Audio/soundin.cpp', 'void SoundInput::resume ()\n{', 'void SoundInput::res
 edit('Audio/soundin.cpp', 'void SoundInput::suspend ()\n{', 'void SoundInput::suspend ()\n{\n  LOG_INFO("JTTY capture suspend requested");')
 edit('Audio/soundin.cpp', 'void SoundInput::stop()\n{', 'void SoundInput::stop()\n{\n  LOG_INFO("JTTY capture stop requested");\n#ifdef Q_OS_MAC\n  m_routeWatch.reset();\n#endif')
 
+subprocess.run([sys.executable, str(root / 'scripts/deepen-jtty-debug.py'), str(source)], check=True)
+
 subprocess.run([sys.executable, str(root / 'scripts/customize-jtty-ui.py'), str(source)], check=True)
 print(source)

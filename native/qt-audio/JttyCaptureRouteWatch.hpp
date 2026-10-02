@@ -3,6 +3,10 @@
 #include <QTimer>
 #include <QStringList>
 #include <functional>
+#include <atomic>
+#include <array>
+#include <QCoreApplication>
+#include <QThread>
 #ifdef Q_OS_MAC
 #include <CoreAudio/CoreAudio.h>
 class JttyCaptureRouteWatch final : public QObject {
@@ -13,6 +17,45 @@ class JttyCaptureRouteWatch final : public QObject {
   std::function<QString()> streamEvidence_;
   unsigned ticks_=0;
   bool healthy_=true;
+  std::atomic<unsigned> eventCount_{0},eventSelector_{0};
+  struct Subscription {AudioObjectID id;AudioObjectPropertyAddress address;};
+  QVector<Subscription> subscriptions_;
+  static OSStatus changed(AudioObjectID,UInt32 count,AudioObjectPropertyAddress const* addresses,void* context) {
+    auto self=static_cast<JttyCaptureRouteWatch*>(context);
+    if(count) self->eventSelector_.store(addresses[count-1].mSelector);
+    self->eventCount_.fetch_add(count);return noErr;
+  }
+  void subscribe(AudioObjectID id,AudioObjectPropertySelector selector,AudioObjectPropertyScope scope=kAudioObjectPropertyScopeGlobal) {
+    AudioObjectPropertyAddress address{selector,scope,kAudioObjectPropertyElementMain};
+    auto result=AudioObjectAddPropertyListener(id,&address,changed,this);
+    LOG_INFO("JTTY HAL subscribe id=" << id << " selector=" << selector << " scope=" << scope << " status=" << result);
+    if(!result) subscriptions_.append({id,address});
+  }
+  void snapshot(char const* reason) {
+    LOG_INFO("JTTY HAL snapshot reason=" << reason << " pid=" << QCoreApplication::applicationPid());
+    for(auto id:devices()) {
+      AudioObjectPropertyAddress a{kAudioDevicePropertyNominalSampleRate,kAudioObjectPropertyScopeGlobal,kAudioObjectPropertyElementMain};
+      Float64 rate=0;UInt32 size=sizeof(rate);auto rateStatus=AudioObjectGetPropertyData(id,&a,0,nullptr,&size,&rate);
+      OSStatus aliveStatus=0,runningStatus=0,bufferStatus=0;
+      auto alive=integerProperty(id,kAudioDevicePropertyDeviceIsAlive,&aliveStatus);
+      auto running=integerProperty(id,kAudioDevicePropertyDeviceIsRunningSomewhere,&runningStatus);
+      auto buffer=integerProperty(id,kAudioDevicePropertyBufferFrameSize,&bufferStatus);
+      LOG_INFO("JTTY HAL device id=" << id << " name=" << stringProperty(id,kAudioObjectPropertyName).toStdString()
+        << " uid=" << stringProperty(id,kAudioDevicePropertyDeviceUID).toStdString()
+        << " alive=" << alive << " alive_status=" << aliveStatus << " running=" << running << " running_status=" << runningStatus
+        << " rate=" << rate << " rate_status=" << rateStatus << " buffer_frames=" << buffer << " buffer_status=" << bufferStatus
+        << " transport=" << integerProperty(id,kAudioDevicePropertyTransportType));
+      if(id==selected_ || stringProperty(id,kAudioDevicePropertyDeviceUID)==uid_) {
+        for(auto scope:{kAudioObjectPropertyScopeInput,kAudioObjectPropertyScopeOutput}) {
+          AudioStreamBasicDescription format{};size=sizeof(format);
+          a={kAudioDevicePropertyStreamFormat,scope,kAudioObjectPropertyElementMain};
+          auto status=AudioObjectGetPropertyData(id,&a,0,nullptr,&size,&format);
+          LOG_INFO("JTTY HAL native format id=" << id << " scope=" << scope << " status=" << status << " rate=" << format.mSampleRate
+            << " channels=" << format.mChannelsPerFrame << " bits=" << format.mBitsPerChannel << " flags=" << format.mFormatFlags << " bytes_per_frame=" << format.mBytesPerFrame);
+        }
+      }
+    }
+  }
   static QString stringProperty(AudioDeviceID id, AudioObjectPropertySelector key) {
     AudioObjectPropertyAddress a={key,kAudioObjectPropertyScopeGlobal,kAudioObjectPropertyElementMain};
     CFStringRef value=nullptr; UInt32 bytes=sizeof(value);
@@ -39,18 +82,28 @@ public:
     if(matches!=1) selected_=0;
     uid_=stringProperty(selected_,kAudioDevicePropertyDeviceUID);
     LOG_INFO("JTTY capture binding selected=" << name_.toStdString() << " id=" << selected_ << " uid=" << uid_.toStdString() << " matches=" << matches);
+    snapshot("capture binding");
+    for(auto selector:{kAudioHardwarePropertyDevices,kAudioHardwarePropertyDefaultInputDevice,kAudioHardwarePropertyDefaultOutputDevice}) subscribe(kAudioObjectSystemObject,selector);
+    if(selected_) for(auto selector:std::array<AudioObjectPropertySelector,4>{kAudioDevicePropertyDeviceIsAlive,kAudioDevicePropertyNominalSampleRate,kAudioDevicePropertyBufferFrameSize,kAudioDevicePropertyDeviceIsRunningSomewhere}) subscribe(selected_,selector);
     timer_.setInterval(500);
     connect(&timer_,&QTimer::timeout,this,[this]{sample();});
+  }
+  ~JttyCaptureRouteWatch() override {
+    timer_.stop();
+    for(auto const& entry:subscriptions_) AudioObjectRemovePropertyListener(entry.id,&entry.address,changed,this);
   }
   bool valid() const {return healthy_ && selected_ && !uid_.isEmpty();}
   void begin(){sample();if(valid()) timer_.start();}
   void sample() {
+    auto events=eventCount_.exchange(0);
+    if(events) {LOG_INFO("JTTY HAL property changes count=" << events << " last_selector=" << eventSelector_.load());snapshot("HAL property change");}
     OSStatus status=0;
     auto alive=integerProperty(selected_,kAudioDevicePropertyDeviceIsAlive,&status);
     if(status || !alive || stringProperty(selected_,kAudioDevicePropertyDeviceUID)!=uid_) {
       healthy_=false;
       timer_.stop();
-      LOG_ERROR("JTTY selected capture device lost id=" << selected_ << " status=" << status);
+      LOG_ERROR("JTTY selected capture device lost id=" << selected_ << " status=" << status << " alive=" << alive << " expected_uid=" << uid_.toStdString() << " observed_uid=" << stringProperty(selected_,kAudioDevicePropertyDeviceUID).toStdString());
+      snapshot("selected device lost; inspect same UID under replacement ID");
       failed_(QString("Selected input %1 disconnected or changed identity. Capture stopped; refresh Radio / Audio settings. No microphone fallback is allowed.").arg(name_));
       return;
     }

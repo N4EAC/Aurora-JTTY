@@ -13,6 +13,9 @@
 #include <QSpinBox>
 #include <QProgressBar>
 #include <functional>
+#include <QProcess>
+#include <QDir>
+#include <QDateTime>
 
 class JttyConversationWindow final : public QDialog {
 public:
@@ -291,6 +294,7 @@ void MainWindow::installJttyLayout() {
   m_jttyInputName=m_config.audio_input_device().deviceName();
   connect(this,&MainWindow::startAudioInputStream,this,[this](QAudioDeviceInfo const& device){
     m_jttyInputName=device.deviceName();m_jttyInputError.clear();
+    setProperty("jttyAudioSystemTraceRequested",false);
   });
   connect(m_soundInput,&AudioInputSource::error,this,&MainWindow::jttyNoteInputError);
   auto update = [this,cat,scope,devices,counter,reading,meter] {
@@ -315,6 +319,24 @@ void MainWindow::installJttyLayout() {
 void MainWindow::jttyNoteInputError(QString const& message) {
   if(!m_config.audio_input_device().isNull()) m_jttyInputName=m_config.audio_input_device().deviceName();
   m_jttyInputError=message;
+#ifdef Q_OS_MAC
+  if(!m_automated_test && !property("jttyAudioSystemTraceRequested").toBool()) {
+    setProperty("jttyAudioSystemTraceRequested",true);
+    auto folder=QDir::homePath()+"/Library/Application Support/JTTY Workbench/Logs";
+    QDir().mkpath(folder);
+    auto path=folder+"/coreaudio-failure-"+QDateTime::currentDateTimeUtc().toString("yyyyMMdd-HHmmss-zzz")+".log";
+    auto collector=new QProcess(this);
+    collector->setProcessChannelMode(QProcess::MergedChannels);collector->setStandardOutputFile(path);
+    connect(collector,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),collector,[collector,path](int code,QProcess::ExitStatus){
+      LOG_INFO("JTTY CoreAudio system trace saved path=" << path.toStdString() << " collector_exit=" << code);collector->deleteLater();
+    });
+    connect(collector,&QProcess::errorOccurred,collector,[collector,path](QProcess::ProcessError){
+      LOG_WARN("JTTY CoreAudio trace collector error path=" << path.toStdString() << " error=" << collector->errorString().toStdString());collector->deleteLater();
+    });
+    collector->start("/usr/bin/log",{"show","--last","90s","--style","compact","--predicate","process == \"coreaudiod\" OR process == \"audiomxd\""});
+    LOG_INFO("JTTY capture failure=" << message.toStdString() << " automatic_system_trace=" << path.toStdString());
+  }
+#endif
   if(m_monitoring) on_monitorButton_clicked(false);
   ui->monitorButton->setChecked(false);
 }
