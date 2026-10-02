@@ -104,6 +104,9 @@ final class RadioAudio: StationAudio {
     private var inputChannels = 1
     private var selectedChannel = 0
     private var spectrumHistory: [Float] = []
+    private var diagnosticTime = Date.distantPast
+    private var diagnosticFrames = 0
+    private var diagnosticPeak: Float = 0
     private let processing = DispatchQueue(label: "jtty.audio.capture")
     var onSamples: (([Int16], Float, [Float]) -> Void)?
     var onError: ((String) -> Void)?
@@ -117,6 +120,7 @@ final class RadioAudio: StationAudio {
             throw AudioFailure.message("Selected USB input is unavailable. Reconnect it and refresh devices.")
         }
         let device = current
+        Diagnostics.record("AUDIO open device=\(device.name) uid=\(device.uid) id=\(device.id) rate=\(device.rate) channels=\(device.inputs)")
         guard channel >= 0, channel < device.inputs else { throw AudioFailure.message("Select an available input channel") }
         guard device.inputs <= 2 else { throw AudioFailure.message("WSJT-X audio input supports mono or stereo devices") }
         let factor = Int((device.rate / 12000).rounded())
@@ -155,16 +159,18 @@ final class RadioAudio: StationAudio {
                 while let end = session.messages.firstIndex(of: 10) {
                     let message = String(decoding: session.messages[..<end], as: UTF8.self)
                     session.messages.removeSubrange(...end)
+                    Diagnostics.record("QT helper pid=\(session.process.processIdentifier): " + message)
                     if message.hasPrefix("ERROR ") { self.onError?("WSJT-X audio: " + message.dropFirst(6)) }
                 }
             }
         }
         session.process.terminationHandler = { [weak self] process in
             guard session.isActive() else { return }
+            Diagnostics.record("QT helper exited status=\(process.terminationStatus)")
             self?.onError?("WSJT-X audio helper stopped unexpectedly (exit \(process.terminationStatus))")
         }
         input = session
-        do { try session.process.run() }
+        do { try session.process.run(); Diagnostics.record("QT helper launched pid=\(session.process.processIdentifier) name=\(device.name) channel=\(channel) factor=\(factor)") }
         catch { stopInput(); throw AudioFailure.message("Cannot start WSJT-X audio helper: \(error.localizedDescription)") }
     }
 
@@ -187,6 +193,11 @@ final class RadioAudio: StationAudio {
         if count == 0 { return }
         let values = Array(UnsafeBufferPointer(start: destination.floatChannelData![0], count: count))
         let peak = values.map { abs($0) }.max() ?? 0
+        diagnosticFrames += count; diagnosticPeak = max(diagnosticPeak, peak)
+        if Date().timeIntervalSince(diagnosticTime) >= 1 {
+            Diagnostics.record("AUDIO converted frames=\(diagnosticFrames) peak=\(diagnosticPeak) rate=12000")
+            diagnosticTime = Date(); diagnosticFrames = 0; diagnosticPeak = 0
+        }
         let pcm = values.map { Int16(max(-32767, min(32767, Int(($0.isFinite ? $0 : 0) * 32767)))) }
         onSamples?(pcm, peak, spectrum(values))
     }
@@ -247,6 +258,7 @@ final class RadioAudio: StationAudio {
         if let queue = output { AudioQueueStop(queue, true); AudioQueueDispose(queue, true); output = nil }
     }
     func stopInput() {
+        Diagnostics.record("AUDIO input stop requested")
         let session = input; input = nil
         if let session = session {
             session.cancel()

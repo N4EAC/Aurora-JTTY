@@ -13,11 +13,13 @@ final class RigController {
     var onError: ((String) -> Void)?
     private func error(_ code: Int32) -> String { String(cString: jw_radio_error(code)) }
     func connect(model: Int32, path: String, pttPath: String, baud: Int32, stopBits: Int32, ptt: Int32, completion: @escaping (String?) -> Void) {
+        Diagnostics.record("CAT connect requested model=\(model) port=\(path) baud=\(baud) stopBits=\(stopBits) pttMethod=\(ptt)")
         work.async { [self] in
             if self.handle != nil { DispatchQueue.main.async { completion("Disconnect the existing radio first") }; return }
             var buffer = [CChar](repeating: 0, count: 256)
             let radio = path.withCString { path in pttPath.withCString { jw_radio_open(model, path, $0, baud, stopBits, ptt, &buffer) } }
-            guard let radio = radio else { let message = String(cString: buffer); DispatchQueue.main.async { completion(message) }; return }
+            guard let radio = radio else { let message = String(cString: buffer); Diagnostics.record("CAT open failed: " + message); DispatchQueue.main.async { completion(message) }; return }
+            Diagnostics.record("CAT open succeeded model=\(model) serialControlLines=\(model != 1 && model != 2 ? "DTR/RTS OFF" : "not applicable")")
             self.handle = radio
             var frequency: Double = 0, ptt: Int32 = 0, mode = [CChar](repeating: 0, count: 32)
             let result = jw_radio_state(radio, &frequency, &ptt, &mode)
@@ -36,12 +38,14 @@ final class RigController {
         guard let handle = handle else { return }
         var frequency: Double = 0, ptt: Int32 = 0, mode = [CChar](repeating: 0, count: 32)
         let result = jw_radio_state(handle, &frequency, &ptt, &mode)
+        Diagnostics.record("CAT poll result=\(result) frequency=\(frequency) ptt=\(ptt) mode=\(String(cString: mode))")
         if result == 0 {
             let state = RigState(frequency: frequency, ptt: ptt != 0, mode: String(cString: mode), expired: jw_radio_watchdog(handle) != 0)
             DispatchQueue.main.async { self.onState?(state) }
         } else { let message = error(result); DispatchQueue.main.async { self.onError?("CAT connection lost: \(message)") } }
     }
     func ptt(_ on: Bool, limit: Double = 40, completion: @escaping (String?) -> Void) {
+        Diagnostics.record("CAT PTT requested on=\(on) limit=\(limit)")
         work.async {
             let result = jw_radio_ptt(self.handle, on ? 1 : 0, limit)
             let message = result == 0 ? nil : self.error(result)
@@ -133,6 +137,7 @@ final class LiveStation: ObservableObject {
          audio: StationAudio = RadioAudio(), deviceList: @escaping () -> [AudioDevice] = Devices.list,
          permission: @escaping () -> AVAuthorizationStatus = { AVCaptureDevice.authorizationStatus(for: .audio) }) {
         self.audio = audio; self.enumerateDevices = deviceList; self.inputPermission = permission
+        Diagnostics.record("APP start version=\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "test")")
         self.preferences = preferences
         if let data = preferences?.data(forKey: "station-settings"), let saved = try? JSONDecoder().decode(StationSettings.self, from: data), saved.macros.count == 8 { settings = saved }
         else { settings = StationSettings() }
@@ -150,7 +155,7 @@ final class LiveStation: ObservableObject {
             if self.transmitting { self.stop(reason: message) }
             self.failure = message
         }
-        audio.onError = { [weak self] message in DispatchQueue.main.async { self?.stop(reason: message); self?.stopMonitor() } }
+        audio.onError = { [weak self] message in Diagnostics.record("AUDIO error: " + message); DispatchQueue.main.async { self?.stop(reason: message); self?.stopMonitor() } }
     }
 
     func save() {
@@ -158,6 +163,7 @@ final class LiveStation: ObservableObject {
     }
     func refresh() {
         devices = enumerateDevices()
+        Diagnostics.record("DEVICES " + devices.map { "\($0.name) id=\($0.id) uid=\($0.uid) in=\($0.inputs) out=\($0.outputs) rate=\($0.rate)" }.joined(separator: " | "))
         ports = ((try? FileManager.default.contentsOfDirectory(atPath: "/dev")) ?? []).filter { $0.hasPrefix("cu.") && !$0.contains("Bluetooth") && !$0.contains("debug-console") }.map { "/dev/" + $0 }
     }
     func connect() {
@@ -189,6 +195,7 @@ final class LiveStation: ObservableObject {
     }
     func startMonitor() {
         guard !monitoring, !transmitting else { return }
+        Diagnostics.record("MONITOR start requested uid=\(settings.inputUID) channel=\(settings.inputChannel) CATconnected=\(connected)")
         refresh()
         guard let device = devices.first(where: { $0.uid == settings.inputUID && $0.inputs > 0 }) else { failure = "Select an audio input device"; return }
         guard validAudioSettings() else { return }
@@ -206,7 +213,7 @@ final class LiveStation: ObservableObject {
         do { try audio.startInput(device: device, channel: settings.inputChannel); activeInput = "\(device.name) · channel \(settings.inputChannel + 1)"; monitoring = true; failure = ""; status = "Receiving from \(device.name)"; save() }
         catch { failure = error.localizedDescription }
     }
-    func stopMonitor() { monitoring = false; activeInput = ""; monitorEpoch = UUID().uuidString; audio.stopInput(); peak = 0 }
+    func stopMonitor() { Diagnostics.record("MONITOR stop CATconnected=\(connected) transmitting=\(transmitting)"); monitoring = false; activeInput = ""; monitorEpoch = UUID().uuidString; audio.stopInput(); peak = 0 }
     func validAudioSettings() -> Bool {
         guard settings.tone.isFinite, (200...2600).contains(settings.tone), settings.tolerance.isFinite, (1...1000).contains(settings.tolerance), settings.txGain.isFinite, (0...1).contains(settings.txGain), (0...2000).contains(settings.leadMS), (0...2000).contains(settings.tailMS) else { failure = "Check audio frequency, tolerance, gain and PTT timing values."; return false }
         return true

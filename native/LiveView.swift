@@ -278,6 +278,7 @@ struct StationSetupView: View {
                         try? FileManager.default.createDirectory(at: station.logFolder, withIntermediateDirectories: true)
                         NSWorkspace.shared.open(station.logFolder)
                     }
+                    Button("Open Debug Log") { NSWorkspace.shared.open(Diagnostics.url) }
                     Spacer()
                     Text("PTT timeout: 45 seconds maximum").font(.caption).foregroundStyle(.secondary)
                 }

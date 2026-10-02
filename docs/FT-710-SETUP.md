@@ -42,3 +42,9 @@ CAT and USB audio are separate devices. Select **USB Audio Device** as input and
 ## Version 0.3 receive backend
 
 The current app uses WSJT-X's original Qt SoundInput and AudioDevice implementation through a bundled `jtty-audio-input` helper, with a dedicated audio thread. The older AudioQueue, PortAudio and direct IOProc capture paths have been removed. Select the input by its device name and channel in Station Setup. Duplicate device names are rejected instead of selecting a default. Mono and stereo inputs at multiples of 12 kHz are supported; the FT-710 USB interface normally uses 48 kHz. Software PCM transport, channel selection, stream descriptors, conversion and CAT/receive lifecycle tests pass. The radio was disconnected during this replacement; real USB operation is not yet verified. macOS microphone permission also applies to USB audio capture.
+
+## Debug log for USB loss during CAT connection
+
+Station Setup → **Open Debug Log** opens `~/Library/Application Support/JTTY Workbench/Logs/diagnostics.log`. Quit and reopen the updated app, start Monitor with USB selected, and then connect CAT once. The log records CAT open/polls/PTT requests, current audio-device IDs and UIDs, helper process state/errors, selected format and receive levels. It uses UTC millisecond timestamps and rotates at about 2 MB; it does not record audio or chat contents.
+
+System logs have confirmed the USB CoreAudio device became unavailable before AUHAL fell back to the built-in microphone. The helper now checks that selected device's alive state and stops on loss. This prevents silent fallback but does not fix the underlying USB disappearance. The log should establish whether loss coincides with serial open, polling, or another event. Do not change radio audio levels to compensate for a disconnected device.

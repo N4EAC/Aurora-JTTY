@@ -44,5 +44,5 @@ add_executable(jtty-audio-input native/qt-audio/main.cpp
   ${WSJT}/Audio/AudioStreamDescriptor.cpp)
 set_target_properties(jtty-audio-input PROPERTIES AUTOMOC ON CXX_STANDARD 17)
 target_include_directories(jtty-audio-input PRIVATE native/qt-audio ${WSJT})
-target_link_libraries(jtty-audio-input PRIVATE Qt5::Core Qt5::Multimedia)
+target_link_libraries(jtty-audio-input PRIVATE Qt5::Core Qt5::Multimedia "-framework CoreAudio" "-framework CoreFoundation")
 add_test(NAME upstream_audio_adapter COMMAND jtty-audio-input --self-test)

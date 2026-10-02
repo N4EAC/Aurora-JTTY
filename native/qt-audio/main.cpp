@@ -6,6 +6,7 @@
 #include <QSocketNotifier>
 #include <QDebug>
 #include <QFile>
+#include <CoreAudio/CoreAudio.h>
 #include <atomic>
 #include <cstdio>
 #include <unistd.h>
@@ -37,6 +38,21 @@ public:
         return out[0]==1000&&out[1]==2000&&out[2]==3000;
     }
 };
+
+static AudioDeviceID findDevice(QString const& name) {
+    AudioObjectPropertyAddress a={kAudioHardwarePropertyDevices,kAudioObjectPropertyScopeGlobal,kAudioObjectPropertyElementMain};
+    UInt32 bytes=0;if(AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,&a,0,nullptr,&bytes))return 0;
+    QVector<AudioDeviceID> ids(int(bytes/sizeof(AudioDeviceID)));
+    if(AudioObjectGetPropertyData(kAudioObjectSystemObject,&a,0,nullptr,&bytes,ids.data()))return 0;
+    AudioDeviceID found=0;int matches=0;
+    for(auto id:ids) {
+        a.mSelector=kAudioObjectPropertyName;CFStringRef value=nullptr;UInt32 size=sizeof(value);
+        if(AudioObjectGetPropertyData(id,&a,0,nullptr,&size,&value)||!value)continue;
+        char label[1024]={};CFStringGetCString(value,label,sizeof(label),kCFStringEncodingUTF8);CFRelease(value);
+        if(QString::fromUtf8(label)==name){found=id;++matches;}
+    }
+    return matches==1?found:0;
+}
 
 int main(int argc,char **argv) {
     QCoreApplication app(argc,argv);
@@ -71,6 +87,20 @@ int main(int argc,char **argv) {
     if(matches!=1){fprintf(stderr,"ERROR selected audio device unavailable or ambiguous\n");return 3;}
     bool valid=false;int channel=args[2].toInt(&valid);if(!valid||channel<0||channel>1)return 4;
     unsigned factor=args[3].toUInt(&valid);if(!valid||factor<1||factor>8)return 4;
+    const AudioDeviceID deviceID=findDevice(args[1]);
+    if(!deviceID){fprintf(stderr,"ERROR cannot resolve selected CoreAudio device identity\n");return 9;}
+    fprintf(stderr,"DEVICE selected name=%s CoreAudioID=%u channel=%d rate=%u\n",args[1].toUtf8().constData(),deviceID,channel,12000*factor);
+    QTimer routeMonitor;routeMonitor.setInterval(100);
+    QObject::connect(&routeMonitor,&QTimer::timeout,&app,[&]{
+        AudioObjectPropertyAddress a={kAudioDevicePropertyDeviceIsAlive,kAudioObjectPropertyScopeGlobal,kAudioObjectPropertyElementMain};
+        UInt32 alive=0,bytes=sizeof(alive);
+        OSStatus result=AudioObjectGetPropertyData(deviceID,&a,0,nullptr,&bytes,&alive);
+        if(result||!alive){
+            fprintf(stderr,"ERROR selected USB audio device became unavailable id=%u alive=%u status=%d; stopping capture to prevent microphone fallback\n",deviceID,alive,result);
+            app.exit(10);
+        }
+    });
+    routeMonitor.start();
     QThread audioThread;
     auto *input=new SoundInput;auto *sink=new PipeSink(false);
     input->moveToThread(&audioThread);sink->moveToThread(&audioThread);
