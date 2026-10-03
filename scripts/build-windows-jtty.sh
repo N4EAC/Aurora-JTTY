@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PYTHONUTF8=1
 cd "$(dirname "$0")/.."
 python scripts/prepare-wsjtx-jtty.py
 TASK_PREFIX="$(pwd)/build/hamlib-prefix"
