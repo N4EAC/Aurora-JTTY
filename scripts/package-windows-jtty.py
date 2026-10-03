@@ -20,6 +20,10 @@ deploy = shutil.which('windeployqt-qt5') or shutil.which('windeployqt')
 if not deploy:
     raise RuntimeError('Qt Windows deployment tool not found')
 subprocess.run([deploy, '--release', '--no-translations', '--no-opengl-sw', '--no-angle', '--no-system-d3d-compiler', str(exe)], check=True)
+# Aurora uses only SQLite; other Qt database plugins require unrelated servers.
+for plugin in (stage / 'bin/sqldrivers').glob('*.dll'):
+    if plugin.name.lower() != 'qsqlite.dll':
+        plugin.unlink()
 # Preserve the upstream resource-directory relationship to the executable.
 resources = stage / 'share/wsjtx'
 resources.mkdir(parents=True)
