@@ -19,7 +19,7 @@ shutil.copy2(root / 'build/windows-build/wsjtx.exe', exe)
 deploy = shutil.which('windeployqt-qt5') or shutil.which('windeployqt')
 if not deploy:
     raise RuntimeError('Qt Windows deployment tool not found')
-subprocess.run([deploy, '--release', '--no-translations', '--no-opengl-sw', '--no-system-d3d-compiler', str(exe)], check=True)
+subprocess.run([deploy, '--release', '--no-translations', '--no-opengl-sw', '--no-angle', '--no-system-d3d-compiler', str(exe)], check=True)
 # Preserve the upstream resource-directory relationship to the executable.
 resources = stage / 'share/wsjtx'
 resources.mkdir(parents=True)
