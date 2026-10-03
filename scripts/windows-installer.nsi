@@ -1,7 +1,7 @@
 Unicode True
 !include "MUI2.nsh"
-Name "Aurora JTTY 1.0"
-OutFile "..\build\windows-output\Aurora-JTTY-1.0-windows-x64-setup.exe"
+Name "Aurora JTTY 1.1"
+OutFile "..\build\windows-output\Aurora-JTTY-1.1-windows-x64-setup.exe"
 InstallDir "$LOCALAPPDATA\Programs\Aurora JTTY"
 RequestExecutionLevel user
 Icon "..\native\Assets\Aurora-JTTY.ico"

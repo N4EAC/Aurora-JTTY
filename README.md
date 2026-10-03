@@ -1,7 +1,7 @@
 
 <img width="1609" height="977" alt="Bunker Ham Shack Digital Signals" src="https://github.com/user-attachments/assets/b6552f1a-39cc-4efb-bdbc-f7f3177ce1ff" />
 
-# Aurora JTTY 1.0
+# Aurora JTTY 1.1
 
 ![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-blue)
 ![Platform: Windows x64](https://img.shields.io/badge/platform-Windows%20x64-blue)
@@ -10,13 +10,15 @@ Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-
 
 ## Download and install
 
-[macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0/Aurora-JTTY-1.0-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
+[macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.1) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.1/Aurora-JTTY-1.1-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
 
 The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
 
-[Experimental Windows x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0-windows-preview/Aurora-JTTY-1.0-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
+[Experimental Windows x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.1) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.1/Aurora-JTTY-1.1-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
 
 **The Windows version is experimental.** It includes its runtime dependencies and is unsigned. Native Windows startup and installation are checked automatically; radio USB audio and CAT/PTT require testing with your station. Complete application and dependency source packages accompany the release.
+
+Version 1.1 fixes transmitted-message text contrast: black text on the yellow highlight remains readable across themes.
 
 ## Using Aurora JTTY
 

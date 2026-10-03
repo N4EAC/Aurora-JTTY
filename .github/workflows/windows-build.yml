@@ -84,17 +84,17 @@ jobs:
       - name: Verify installed application
         shell: pwsh
         run: |
-          $installer = Start-Process (Resolve-Path 'build/windows-output/Aurora-JTTY-1.0-windows-x64-setup.exe') -ArgumentList '/S' -Wait -PassThru
+          $installer = Start-Process (Resolve-Path 'build/windows-output/Aurora-JTTY-1.1-windows-x64-setup.exe') -ArgumentList '/S' -Wait -PassThru
           if ($installer.ExitCode -ne 0) { throw "Installer exited with code $($installer.ExitCode)" }
           ./scripts/test-windows-startup.ps1 -ExecutablePath "$env:LOCALAPPDATA/Programs/Aurora JTTY/bin/Aurora-JTTY.exe"
       - name: Create portable archive and checksums
         shell: pwsh
         run: |
-          Compress-Archive -Path build/windows-package/* -DestinationPath build/windows-output/Aurora-JTTY-1.0-windows-x64-portable.zip
+          Compress-Archive -Path build/windows-package/* -DestinationPath build/windows-output/Aurora-JTTY-1.1-windows-x64-portable.zip
           Get-ChildItem build/windows-output -File -Recurse | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content build/windows-output/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Aurora-JTTY-1.0-windows-x64
+          name: Aurora-JTTY-1.1-windows-x64
           path: build/windows-output/*
           retention-days: 30
       - name: Upload startup diagnostics

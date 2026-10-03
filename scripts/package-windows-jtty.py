@@ -104,14 +104,14 @@ for package in sorted(packages):
             destination = licenses / package / notice.name
             destination.parent.mkdir(exist_ok=True)
             shutil.copy2(notice, destination)
-(licenses / 'DEPENDENCY-SOURCES.md').write_text('# Bundled dependency source packages\n\nExact MSYS2 source packages corresponding to bundled DLLs:\n\n' + '\n'.join(source_lines) + '\n\nHamlib 4.7.2 source and build scripts are included in Aurora-JTTY-1.0-windows-source.tar.gz.\n')
+(licenses / 'DEPENDENCY-SOURCES.md').write_text('# Bundled dependency source packages\n\nExact MSYS2 source packages corresponding to bundled DLLs:\n\n' + '\n'.join(source_lines) + '\n\nHamlib 4.7.2 source and build scripts are included in Aurora-JTTY-1.1-windows-source.tar.gz.\n')
 # Complete Aurora and Hamlib source, with build scripts and unmodified upstream files.
-with tarfile.open(output / 'Aurora-JTTY-1.0-windows-source.tar.gz', 'w:gz') as archive:
+with tarfile.open(output / 'Aurora-JTTY-1.1-windows-source.tar.gz', 'w:gz') as archive:
     names = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root).decode().split('\0')
     for name in names:
         path = root / name
         if name and path.is_file() and not name.startswith('installers/'):
-            archive.add(path, arcname='Aurora-JTTY-1.0/' + name, recursive=False)
+            archive.add(path, arcname='Aurora-JTTY-1.1/' + name, recursive=False)
     for directory in ('upstream/wsjtx', 'build/hamlib-src'):
         for path in (root / directory).rglob('*'):
             rel = path.relative_to(root / directory)
@@ -119,7 +119,7 @@ with tarfile.open(output / 'Aurora-JTTY-1.0-windows-source.tar.gz', 'w:gz') as a
                 continue
             if directory == 'upstream/wsjtx' and rel.parts[0] == 'samples' and rel.parts[1] != 'JTTY':
                 continue
-            archive.add(path, arcname='Aurora-JTTY-1.0/' + directory + '/' + str(rel), recursive=False)
+            archive.add(path, arcname='Aurora-JTTY-1.1/' + directory + '/' + str(rel), recursive=False)
 # Fetch dependency source packages alongside binaries, rather than relying on mutable links.
 source_out = output / 'dependency-sources'
 source_out.mkdir(exist_ok=True)

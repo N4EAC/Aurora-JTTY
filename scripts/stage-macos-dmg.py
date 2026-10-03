@@ -14,12 +14,12 @@ shutil.copytree(root / "build/Aurora JTTY.app", stage / "Aurora JTTY.app")
 for name in ("COPYING", "THIRD_PARTY_NOTICES.md", "docs/PUBLICATION-REQUIREMENTS.md", "docs/MACOS-INSTALL.md", "upstream/wsjtx/TRADEMARK.md", "upstream/wsjtx/DOCS-LICENSE.md"):
     shutil.copy2(root / name, stage / Path(name).name)
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
-with tarfile.open(stage / "Aurora-JTTY-1.0-source.tar.gz", "w:gz") as archive:
+with tarfile.open(stage / "Aurora-JTTY-1.1-source.tar.gz", "w:gz") as archive:
     for name in files:
         path = root / name
         if not name or name.startswith("installers/") or path.is_dir():
             continue
-        archive.add(path, arcname="Aurora-JTTY-1.0/" + name, recursive=False)
+        archive.add(path, arcname="Aurora-JTTY-1.1/" + name, recursive=False)
     # Include the pinned upstream contents, not merely the Git submodule pointer.
     for path in sorted((root / "upstream/wsjtx").rglob("*")):
         rel = path.relative_to(root)
@@ -33,5 +33,5 @@ with tarfile.open(stage / "Aurora-JTTY-1.0-source.tar.gz", "w:gz") as archive:
             continue
         if path.suffix.lower() in (".dll", ".exe"):
             continue
-        archive.add(path, arcname="Aurora-JTTY-1.0/" + str(rel), recursive=False)
+        archive.add(path, arcname="Aurora-JTTY-1.1/" + str(rel), recursive=False)
 print(stage)

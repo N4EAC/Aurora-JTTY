@@ -1,4 +1,4 @@
-# Aurora JTTY 1.0 — macOS Apple Silicon developer build
+# Aurora JTTY 1.1 — macOS Apple Silicon developer build
 
 This DMG contains the current arm64 application, source snapshot and legal notices. It is not a standalone or notarized public installer and does not support Intel Macs. Keep the included source archive with any redistribution.
 
