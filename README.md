@@ -29,13 +29,13 @@ Aurora JTTY is an independent, unofficial fork based on WSJT-X. The covered appl
 - [Preserved upstream documentation license policy](research/WSJTX-DOCS-LICENSE.md)
 - [Original upstream copyright and license notice](research/WSJTX-license.adoc)
 
-Binary releases require complete corresponding source, including the pinned upstream source and our modifications/build scripts, plus applicable dependency notices and source obligations. This private repository alone does not provide source access to public binary recipients. The current developer app depends on Homebrew libraries and is not a self-contained, signed or notarized public release.
+Binary releases require complete corresponding source, including the pinned upstream source and our modifications/build scripts, plus applicable dependency notices and source obligations. GitHub-generated source archives omit submodule contents; use the complete corresponding source archive attached to the release or clone with submodules. The current developer app depends on Homebrew libraries and is not a self-contained, signed or notarized public release.
 
 Upstream end-user guides are separately licensed **CC BY-ND 4.0**. Preserve their attribution and redistribute them unmodified, or link to the originals; write independent documentation for this fork. This is separate from the software's GPL license. The review is not an exhaustive trademark, patent or final release-artifact clearance.
 
 ## macOS download
 
-[Download the macOS Apple Silicon DMG](installers/Aurora-JTTY-1.0-macOS-arm64.dmg) · [SHA-256 checksum](installers/Aurora-JTTY-1.0-macOS-arm64.dmg.sha256) · [Installation instructions](docs/MACOS-INSTALL.md)
+[Download the macOS Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0/Aurora-JTTY-1.0-macOS-arm64.dmg) · [SHA-256 checksum](installers/Aurora-JTTY-1.0-macOS-arm64.dmg.sha256) · [Installation instructions](docs/MACOS-INSTALL.md)
 
 This is an unsigned developer build requiring compatible Homebrew dependencies, not a standalone public installer. The DMG includes the application, corresponding source archive and legal notices. Recreate it with `sh scripts/package-macos-dmg.sh` after building the app.
 
