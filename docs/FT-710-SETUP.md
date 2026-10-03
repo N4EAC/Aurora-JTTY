@@ -5,3 +5,5 @@ Follow [station setup](WSJTX-JTTY-SETUP.md), selecting Yaesu FT-710 in Radio set
 Use DATA USB and the FT-710's USB modulation source for digital operation. Set USB audio output and modulation gain using the receive meter and the radio's ALC indication. Confirm the selected dial frequency before transmitting. CAT PTT and serial-line PTT require their matching radio configurations; consult the radio manual for your selected method.
 
 The interface provides Monitor, Tune and Halt Tx. Tune/PTT operations key the radio. Begin with receive monitoring, then set appropriate power and modulation levels for transmission.
+
+macOS audio mode must be set to 44.100 not 48.000 for both input and output USB Audio Device(s).
