@@ -24,3 +24,6 @@ p=source/'main.cpp';p.write_text(p.read_text().replace('WSJT-X', 'Aurora JTTY'))
 for name in ('widgets/mainwindow.cpp','widgets/mainwindow.ui','widgets/JttyLayout.hpp'):
  p=source/name;p.write_text(p.read_text().replace('Received messages','All Messages'))
 edit('widgets/mainwindow.cpp', '  check_button_color ();\n  updateMainWindowControlSizes ();', '  int const points=qBound(8,m_settings->value("MainWindow/JttyMessageFontSize",m_settings->value("MainWindow/JttyFontSize",11)).toInt(),17);\n  QFont decodedFont=ui->decodedTextBrowser->contentFont();\n  decodedFont.setPointSize(points);\n  ui->decodedTextBrowser->setContentFont(decodedFont);\n  ui->decodedTextBrowser2->setContentFont(decodedFont);\n  ui->Tx_Message->setFont(decodedFont);\n  ui->Tx_Message->setStyleSheet(QString("font-size: %1pt;").arg(points));\n  check_button_color ();\n  updateMainWindowControlSizes ();')
+
+# Let Cocoa title bars inherit the user's macOS light/dark appearance.
+edit('Darwin/Info.plist.in', '<key>NSRequiresAquaSystemAppearance</key>\n    <true/>', '<key>NSRequiresAquaSystemAppearance</key>\n    <false/>')

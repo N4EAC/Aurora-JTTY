@@ -76,19 +76,22 @@ void MainWindow::installJttyLayout() {
   frequencies->setContentsMargins(16, 12, 16, 12);
   frequencies->setHorizontalSpacing(12);
   frequencies->setVerticalSpacing(8);
-  frequencies->setColumnStretch(0,1);
+  frequencies->setColumnStretch(0,0);
+  for(int column=1;column<=6;++column) frequencies->setColumnStretch(column,1);
   auto radioMode=label(tr("CAT mode unavailable"),top);
   radioMode->setObjectName("jttyRadioMode");
   frequencies->addWidget(radioMode,0,0);
   ui->labDialFreq->setParent(top); ui->labDialFreq->show();
   ui->labDialFreq->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
   ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
+  ui->labDialFreq->setMinimumWidth(0);ui->labDialFreq->setMaximumWidth(310);
   frequencies->addWidget(ui->labDialFreq,1,0);
   auto preset=new QHBoxLayout;
   preset->setSpacing(8);
   mount(preset,ui->bandComboBox); mount(preset,ui->readFreq);
   ui->readFreq->setFixedSize(28,28);
-  ui->bandComboBox->setMinimumWidth(205);
+  ui->bandComboBox->setFixedWidth(230);
+  preset->setAlignment(Qt::AlignLeft);
   ui->bandComboBox->setFixedHeight(32);
   frequencies->addLayout(preset,2,0);
   frequencies->addWidget(label(tr("RECEIVE OFFSET · Hz"),top),0,1);
@@ -109,10 +112,10 @@ void MainWindow::installJttyLayout() {
   placeControl(ui->pbR2T_2,2,1); placeControl(ui->pbT2R_2,2,2);
   for(int column=1;column<=3;++column) frequencies->setColumnMinimumWidth(column,140);
   // Keep action columns balanced and prevent tolerance absorbing spare width.
-  ui->RxFreqSpinBox_2->setMaximumWidth(160);
-  ui->TxFreqSpinBox_2->setMaximumWidth(160);
-  ui->sbFtol_2->setMaximumWidth(160);
-  ui->pbR2T_2->setMaximumWidth(160);ui->pbT2R_2->setMaximumWidth(160);
+  ui->RxFreqSpinBox_2->setMaximumWidth(220);
+  ui->TxFreqSpinBox_2->setMaximumWidth(220);
+  ui->sbFtol_2->setMaximumWidth(220);
+  ui->pbR2T_2->setMaximumWidth(220);ui->pbT2R_2->setMaximumWidth(220);
   auto cat=label(QString{},top);
   cat->setObjectName("jttyCatStatus");
   frequencies->addWidget(cat,0,4,1,3,Qt::AlignLeft|Qt::AlignVCenter);
@@ -123,7 +126,7 @@ void MainWindow::installJttyLayout() {
   placeControl(ui->monitorButton,1,5); placeControl(ui->stopTxButton,1,6);
   placeControl(ui->tuneButton,2,5); placeControl(ui->logQSOButton,2,6);
   for(auto widget : {settings,ui->monitorButton,ui->stopTxButton,ui->tuneButton,ui->logQSOButton}) {
-    widget->setMinimumWidth(110);widget->setMaximumWidth(140);
+    widget->setMinimumWidth(130);widget->setMaximumWidth(220);
   }
   outer->addWidget(top);
 
