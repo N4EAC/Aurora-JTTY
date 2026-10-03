@@ -4,6 +4,7 @@
 # Aurora JTTY 1.0
 
 ![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-blue)
+![Platform: Windows x64](https://img.shields.io/badge/platform-Windows%20x64-blue)
 <img width="1728" height="1049" alt="Screenshot 2026-10-02 at 21 12 44" src="https://github.com/user-attachments/assets/c8dae4f8-3ae6-4107-8dde-a009879cd19e" />
 Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-X, with Hamlib CAT/PTT control, USB audio selection, a waterfall and editable message macros.
 
@@ -12,6 +13,10 @@ Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-
 [macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0/Aurora-JTTY-1.0-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
 
 The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
+
+[Windows x64 preview release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0-windows-preview/Aurora-JTTY-1.0-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
+
+The Windows preview includes its runtime dependencies and is unsigned. Native Windows startup and installation are checked automatically; radio USB audio and CAT/PTT require testing with your station. Complete application and dependency source packages accompany the release.
 
 ## Using Aurora JTTY
 

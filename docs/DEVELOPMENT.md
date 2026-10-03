@@ -26,3 +26,11 @@ See [audio diagnostics](../native/qt-audio/DEBUGGING.md) for log locations and e
 Build the application, then run `sh scripts/package-macos-dmg.sh`. The packaging script includes corresponding source, legal notices and a SHA-256 checksum. Verify the DMG and its source archive before uploading assets. GitHub's automatic source downloads exclude submodule contents and do not replace the complete release source archive.
 
 Preserve the requirements in COPYING, THIRD_PARTY_NOTICES.md and [distribution requirements](PUBLICATION-REQUIREMENTS.md). Bundled third-party binaries need their applicable notices and source obligations. Signing, notarization and self-contained dependency deployment are separate packaging steps.
+
+## Windows build
+
+Run the **Build Aurora JTTY Windows** workflow from GitHub Actions. It uses a Windows runner with MSYS2 MINGW64, builds Hamlib 4.7.2, applies the maintained overlays, compiles the client and creates an NSIS installer plus a portable ZIP. The workflow lists the exact build dependencies.
+
+For a local MSYS2 MINGW64 environment with those dependencies installed, build Hamlib into `build/hamlib-prefix`, retain its source in `build/hamlib-src`, then run `bash scripts/build-windows-jtty.sh` and `python scripts/package-windows-jtty.py`. Run `scripts/test-windows-startup.ps1` from PowerShell and `makensis scripts/windows-installer.nsi` from MINGW64. Packaging collects runtime DLLs, notices and matching dependency source packages; keep these source packages available when distributing binaries.
+
+The workflow verifies both the portable executable and the installed executable without the development DLL search paths. Test physical CAT/PTT and audio separately on Windows 10/11 x64 before treating this preview as a validated station release.
