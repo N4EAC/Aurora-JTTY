@@ -23,12 +23,6 @@ Configure your callsign, grid, radio, CAT serial port and USB audio input/output
 - The waterfall selects the receive offset. Use **Copy Rx → Tx** or **Copy Tx → Rx** to match offsets.
 - **View → Themes** selects Light gray, Dark or Aurora. **Message font size** sets message text to 8–17 pt.
 
-Settings, recordings and logs use the retained JTTY Workbench storage identity and are separate from an installed WSJT-X application.
-
-## Screenshot
-
-![Aurora JTTY in the Aurora theme](docs/screenshots/aurora-jtty.png)
-
 ## Build from source
 
 Install Xcode command-line tools and Homebrew, then:
