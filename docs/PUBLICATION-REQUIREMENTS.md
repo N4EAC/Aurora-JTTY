@@ -1,6 +1,4 @@
-# Aurora JTTY publication review
-
-Reviewed 2026-10-02 against the pinned WSJT-X source and the current developer bundle.
+# Aurora JTTY distribution requirements
 
 Aurora JTTY may be distributed as a modified GPLv3-or-later application. It remains copyrighted; permission comes from its licenses. It cannot be released as a closed-source derivative with covered source withheld.
 
@@ -13,7 +11,7 @@ A release must:
 
 The current app is a local developer bundle linked to Homebrew libraries. It is not yet a self-contained, signed and notarized public macOS release. Review the final bundled libraries, plugins, licenses and source archive before publishing it. Signing and notarization are separate packaging tasks, not substitutes for license compliance.
 
-This review supports publication under those conditions, not an unconditional guarantee of freedom from all copyright or trademark claims.
+These requirements describe license compliance for this distribution; they do not establish trademark or patent clearance.
 
 Sources: upstream/wsjtx/COPYING, upstream/wsjtx/doc/common/license.adoc, upstream/wsjtx/TRADEMARK.md, THIRD_PARTY_NOTICES.md, https://www.gnu.org/licenses/gpl-3.0.html and https://www.gnu.org/licenses/gpl-faq.en.html.
 

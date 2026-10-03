@@ -1,89 +1,73 @@
 <img width="1609" height="977" alt="Bunker Ham Shack Digital Signals" src="https://github.com/user-attachments/assets/b6552f1a-39cc-4efb-bdbc-f7f3177ce1ff" />
+
 # Aurora JTTY 1.0
 
 ![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-blue)
 
-Aurora JTTY retains the existing JTTY Workbench settings, recordings and logs so upgrading preserves station configuration.
+Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-X, with Hamlib CAT/PTT control, USB audio selection, a waterfall and editable message macros.
 
-The current client is a JTTY-only fork of WSJT-X, using its Qt interface, receive/transmit audio, JTTY messaging, waterfall, frequency selector, station settings and Hamlib CAT/PTT control. GPLv3 or later. This independent build has no date-based expiration. The original Swift client remains in the repository for reference.
+## Download and install
 
-Open `build/Aurora JTTY.app`. This replacement uses separate settings from your installed WSJT-X and the old Swift client. Follow [the replacement setup guide](docs/WSJTX-JTTY-SETUP.md). Configure your callsign/grid, **Yaesu FT-710**, serial CAT port, and USB audio input/output in **Settings**. JTTY is the sole selectable operating mode. View → Themes selects Light gray, Dark, or a blue-and-green Aurora palette. View → Message font size adjusts decoded messages in All Messages and Conversation, plus the TX message entry, from 8 to 17 pt. All Messages shows every decoded signal; Conversation follows the selected receive offset. The interface uses JTTY-specific labels/help, and menus/settings limited to relevant features. It includes upstream JTTY frequency presets, including 7.090 MHz for 40 m.
+[macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0/Aurora-JTTY-1.0-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
 
-The October 2 failed test showed the selected USB device becoming unavailable and returning under a new CoreAudio device ID while CAT polls continued. The replacement removes the custom Swift/CAT/audio-helper lifecycle. Hardware receive continuity and RF operation still need a radio test; software tests do not establish that the USB failure is fixed.
+The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
 
-## App screenshot
+## Using Aurora JTTY
 
-![Aurora JTTY with the blue and green Aurora theme](docs/screenshots/aurora-jtty.png)
+Configure your callsign, grid, radio, CAT serial port and USB audio input/output in **Radio / Audio**. See [station setup](docs/WSJTX-JTTY-SETUP.md). Select a band and confirm the dial frequency before pressing **Monitor**.
 
-Screenshot rendered from the current application in the GUI smoke test, with no radio attached. It shows the Aurora theme, All Messages, Conversation and waterfall; it does not demonstrate live radio reception.
+- **All Messages** shows decoded signals across the waterfall range, with frequency and estimated SNR.
+- **Conversation** follows the selected receive offset and tolerance. It can open in a dedicated window.
+- Type in **Message** and use Enter or **Send message** to transmit. F1–F8 invoke editable macros. **Halt Tx** stops transmission.
+- The waterfall selects the receive offset. Use **Copy Rx → Tx** or **Copy Tx → Rx** to match offsets.
+- **View → Themes** selects Light gray, Dark or Aurora. **Message font size** sets message text to 8–17 pt.
 
-## Licensing and publication
+Settings, recordings and logs use the retained JTTY Workbench storage identity and are separate from an installed WSJT-X application.
 
-Aurora JTTY is an independent, unofficial fork based on WSJT-X. The covered application is licensed under **GNU GPL version 3 or later**. Original copyrights remain in force; no upstream endorsement is claimed.
+## Screenshot
 
-- [Full GPL license](COPYING)
-- [Third-party licenses and copyright attribution](THIRD_PARTY_NOTICES.md)
-- [Publication requirements and current packaging limitations](docs/PUBLICATION-REQUIREMENTS.md)
+![Aurora JTTY in the Aurora theme](docs/screenshots/aurora-jtty.png)
 
-Binary releases require complete corresponding source, including the pinned upstream source and our modifications/build scripts, plus applicable dependency notices and source obligations. GitHub-generated source archives omit submodule contents; use the complete corresponding source archive attached to the release or clone with submodules. The current developer app depends on Homebrew libraries and is not a self-contained, signed or notarized public release.
+## Build from source
 
-Upstream end-user guides are separately licensed **CC BY-ND 4.0**. Preserve their attribution and redistribute them unmodified, or link to the originals; write independent documentation for this fork. This is separate from the software's GPL license. The review is not an exhaustive trademark, patent or final release-artifact clearance.
-
-## macOS download
-
-[Download the macOS Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0/Aurora-JTTY-1.0-macOS-arm64.dmg) · [SHA-256 checksum](installers/Aurora-JTTY-1.0-macOS-arm64.dmg.sha256) · [Installation instructions](docs/MACOS-INSTALL.md)
-
-This is an unsigned developer build requiring compatible Homebrew dependencies, not a standalone public installer. The DMG includes the application, corresponding source archive and legal notices. Recreate it with `sh scripts/package-macos-dmg.sh` after building the app.
-
-## Build the WSJT-X-based client
-
-With Xcode command-line tools and Homebrew:
+Install Xcode command-line tools and Homebrew, then:
 
 ```sh
+git clone --recurse-submodules https://github.com/N4EAC/Aurora-JTTY.git
+cd Aurora-JTTY
 brew install gcc fftw cmake hamlib qt@5 boost libusb portaudio
 sh scripts/build-wsjtx-jtty.sh
 sh scripts/test-wsjtx-jtty.sh
 open "build/Aurora JTTY.app"
 ```
 
-The source overlay is recreated from the unchanged pinned submodule by `scripts/prepare-wsjtx-jtty.py`. Other mode actions, quick buttons, selection slots, saved-profile mode restoration and command-line mode selection are restricted to JTTY; the common DSP library is retained intact. Upstream copyright and license notices are preserved.
+For an existing clone, run `git submodule update --init --recursive`. The upstream checkout is pinned at `567ad29ce6abf3d4a44f181cdbc7ceba0d73e5f4` (`v3.2.0-rc1`). GitHub's automatically generated source archives omit submodule contents; use the complete source archive attached to the release or clone with submodules.
 
-The developer bundle depends on this machine's Homebrew libraries. It is not packaged or notarized for distribution. Keep it in the workspace.
+## Development
 
-The old Swift build remains available via `sh scripts/build.sh` and `sh scripts/test.sh`, and is no longer the preferred radio client.
-
-Clone this repository with `git clone --recurse-submodules` or run `git submodule update --init --recursive` after cloning.
-
-The required upstream checkout is pinned to `v3.2.0-rc1`, commit `567ad29ce6abf3d4a44f181cdbc7ceba0d73e5f4`. To restore it:
+See [the development guide](docs/DEVELOPMENT.md) for source organization, tests and packaging. The reproducible overlay in `scripts/prepare-wsjtx-jtty.py` generates the Qt client from the unchanged pinned upstream source. Change maintained overlay scripts and assets instead of editing the generated `build/wsjtx-jtty-source` directory.
 
 ```sh
-git clone --depth 1 --branch v3.2.0-rc1 https://github.com/WSJTX/wsjtx.git upstream/wsjtx
+sh scripts/package-macos-dmg.sh
 ```
 
-## Recorded-audio CLI
+This creates the DMG and checksum under `installers/`, with the application, corresponding source and legal notices. The current package uses external Homebrew libraries; bundling dependencies, signing and notarization require additional release work.
+
+## Recorded-audio tools
 
 ```sh
 python3 client/jtty.py encode "CQ K1ABC CQ" build/cq.wav
 python3 client/jtty.py decode build/cq.wav
-python3 client/jtty.py decode upstream/wsjtx/samples/JTTY/260807_134110.wav
 ```
 
-Input WAV files must be 12 kHz mono PCM16, at most 180 seconds. Messages support up to 80 characters and use upstream normalization. Output is JSON. Live audio converts the selected device's sample rate to the same decoder format.
+Decoder input is 12 kHz mono PCM16 WAV, up to 180 seconds. Messages support up to 80 characters; output is JSON. Live audio is converted to the decoder format.
 
-## Source and verification
+## License and attribution
 
-- `native/Audio.swift` and `native/qt-audio/`: bridge to upstream WSJT-X Qt capture, PCM conversion and CoreAudio playback.
-- `native/Station.swift` and `LiveView.swift`: station workflow and interface.
-- `native/radio.c`: Hamlib commands, serialization and timed PTT release.
-- `native/live_bridge.f90`: streaming upstream decoder and encoder bindings.
-- `native/engine.f90` and `client/jtty.py`: recorded-audio tools.
+Aurora JTTY is licensed under **GNU GPL version 3 or later**. It is based on WSJT-X and is not endorsed by the WSJT Development Group. Original copyright notices are preserved.
 
-The PTT watchdog releases a timed transmission while this process and the control connection remain functional. It cannot guarantee release after forcible process termination or a disconnected USB cable. Stop/PTT OFF and graceful shutdown attempt immediate release and report failures.
+- [Full license](COPYING)
+- [Third-party licenses and attribution](THIRD_PARTY_NOTICES.md)
+- [Distribution requirements](docs/PUBLICATION-REQUIREMENTS.md)
 
-
-Preserve copyright notices and provide corresponding source when distributing covered binaries. No upstream endorsement is claimed. See [third-party notices](THIRD_PARTY_NOTICES.md) and [publication requirements](docs/PUBLICATION-REQUIREMENTS.md).
-
-The original app icon is in `native/Assets`; regenerate it with `swift scripts/make-icon.swift native/Assets` followed by `iconutil -c icns native/Assets/JTTY.iconset -o native/Assets/JTTY.icns`.
-
-
-Receive capture now compiles the pinned upstream `Audio/soundin.cpp`, `Audio/AudioDevice.cpp`, and `Audio/AudioStreamDescriptor.cpp` directly. The Qt helper owns its audio thread and event loop; the Swift app receives selected-channel PCM16 through a pipe. This replaces the prior custom capture implementations. The helper requires Qt 5.15; Homebrew currently marks Qt 5 deprecated. The playback backend remains CoreAudio.
+Binary distributions must provide complete corresponding source, required notices and applicable dependency compliance. Upstream end-user guides are separately licensed CC BY-ND 4.0; redistribute them unmodified with attribution or write independent documentation.
