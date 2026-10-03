@@ -8,6 +8,28 @@ Open `build/Aurora JTTY.app`. This replacement uses separate settings from your 
 
 The October 2 failed test showed the selected USB device becoming unavailable and returning under a new CoreAudio device ID while CAT polls continued. The replacement removes the custom Swift/CAT/audio-helper lifecycle. Hardware receive continuity and RF operation still need a radio test; software tests do not establish that the USB failure is fixed.
 
+## App screenshot
+
+![Aurora JTTY with the blue and green Aurora theme](docs/screenshots/aurora-jtty.png)
+
+Screenshot rendered from the current application in the GUI smoke test, with no radio attached. It shows the Aurora theme, All Messages, Conversation and waterfall; it does not demonstrate live radio reception.
+
+## Licensing and publication
+
+Aurora JTTY is an independent, unofficial fork based on WSJT-X. The covered application is licensed under **GNU GPL version 3 or later**. Original copyrights remain in force; no upstream endorsement is claimed.
+
+- [Full GPL license](COPYING)
+- [Third-party licenses and copyright attribution](THIRD_PARTY_NOTICES.md)
+- [Publication requirements and current packaging limitations](docs/PUBLICATION-REQUIREMENTS.md)
+- [Source provenance and independent-client licensing assessment](research/JTTY-LICENSING.md)
+- [Preserved upstream trademark policy](research/WSJTX-TRADEMARK.md)
+- [Preserved upstream documentation license policy](research/WSJTX-DOCS-LICENSE.md)
+- [Original upstream copyright and license notice](research/WSJTX-license.adoc)
+
+Binary releases require complete corresponding source, including the pinned upstream source and our modifications/build scripts, plus applicable dependency notices and source obligations. This private repository alone does not provide source access to public binary recipients. The current developer app depends on Homebrew libraries and is not a self-contained, signed or notarized public release.
+
+Upstream end-user guides are separately licensed **CC BY-ND 4.0**. Preserve their attribution and redistribute them unmodified, or link to the originals; write independent documentation for this fork. This is separate from the software's GPL license. The review is not an exhaustive trademark, patent or final release-artifact clearance.
+
 ## Build the WSJT-X-based client
 
 With Xcode command-line tools and Homebrew:
