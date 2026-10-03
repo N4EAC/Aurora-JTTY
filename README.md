@@ -1,9 +1,10 @@
+
 <img width="1609" height="977" alt="Bunker Ham Shack Digital Signals" src="https://github.com/user-attachments/assets/b6552f1a-39cc-4efb-bdbc-f7f3177ce1ff" />
 
 # Aurora JTTY 1.0
 
 ![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-blue)
-
+<img width="1728" height="1049" alt="Screenshot 2026-10-02 at 21 12 44" src="https://github.com/user-attachments/assets/c8dae4f8-3ae6-4107-8dde-a009879cd19e" />
 Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-X, with Hamlib CAT/PTT control, USB audio selection, a waterfall and editable message macros.
 
 ## Download and install
