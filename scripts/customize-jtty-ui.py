@@ -210,3 +210,21 @@ edit('widgets/mainwindow_slots.cpp', 'void MainWindow::on_monitorButton_clicked 
   if(checked && !m_jttyInputError.isEmpty() && m_config.audio_input_device().isNull()) {
     ui->monitorButton->setChecked(false);m_monitoring=false;return;
   }''')
+
+# Keep JTTY status independent of the timed-mode message generator.
+edit('widgets/mainwindow.h', '  bool m_jttyTxActive;', '  QString m_jttyLastTxMessage;\n  bool m_jttyTxActive;')
+edit('widgets/mainwindow_jtty.cpp', '  m_currentMessage = message;', '  m_currentMessage = message;\n  m_jttyLastTxMessage = message;')
+edit('widgets/mainwindow.cpp', 'if(m_mode=="FT4" or m_mode == "JTTY") t="Tx: "+ m_currentMessage;', 'if(m_mode=="FT4" or m_mode == "JTTY") t="Tx: "+ (m_mode == "JTTY" ? m_jttyLastTxMessage : m_currentMessage);')
+edit('widgets/mainwindow.cpp', 'last_tx_label.setText(tr ("Last Tx: %1").arg (m_currentMessage.trimmed()));', 'last_tx_label.setText(tr ("Last Tx: %1").arg ((m_mode == "JTTY" ? m_jttyLastTxMessage : m_currentMessage).trimmed()));')
+edit('JttyTxLoopbackTestController.cpp', '#include <QMessageBox>', '#include <QMessageBox>\n#include <QLabel>')
+edit('JttyTxLoopbackTestController.cpp', '  QSet<qint64> const expectedRequests {m_firstRequestId, m_secondRequestId};', '''  bool lastMessageVisible = false;
+  for (auto label : m_window->findChildren<QLabel*>()) {
+    if (label->accessibleName() == tr("Last transmitted message")) {
+      lastMessageVisible = label->text() == tr("Last Tx: %1").arg(adjacentStructuredFramesMessage().trimmed());
+    }
+  }
+  if (!lastMessageVisible) {
+    fail(tr("Last Tx did not retain the final JTTY message after playout completed."));
+    return;
+  }
+  QSet<qint64> const expectedRequests {m_firstRequestId, m_secondRequestId};''')
