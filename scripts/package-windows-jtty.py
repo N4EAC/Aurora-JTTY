@@ -91,6 +91,19 @@ for package in sorted(packages):
     for candidate in ((mingw / 'share/licenses') / package, (mingw / 'share/licenses') / package.replace('mingw-w64-x86_64-', '')):
         if candidate.is_dir():
             shutil.copytree(candidate, licenses / package, dirs_exist_ok=True)
+    # Some packages place notices outside share/licenses (for example ICU).
+    package_files = subprocess.check_output(['pacman', '-Ql', package], text=True)
+    for line in package_files.splitlines():
+        installed = line.partition(' ')[2]
+        if not installed.startswith('/mingw64/') or installed.endswith('/'):
+            continue
+        if not re.search(r'(?:license|copying|copyright)', Path(installed).name, re.I):
+            continue
+        notice = mingw / installed.removeprefix('/mingw64/')
+        if notice.is_file():
+            destination = licenses / package / notice.name
+            destination.parent.mkdir(exist_ok=True)
+            shutil.copy2(notice, destination)
 (licenses / 'DEPENDENCY-SOURCES.md').write_text('# Bundled dependency source packages\n\nExact MSYS2 source packages corresponding to bundled DLLs:\n\n' + '\n'.join(source_lines) + '\n\nHamlib 4.7.2 source and build scripts are included in Aurora-JTTY-1.0-windows-source.tar.gz.\n')
 # Complete Aurora and Hamlib source, with build scripts and unmodified upstream files.
 with tarfile.open(output / 'Aurora-JTTY-1.0-windows-source.tar.gz', 'w:gz') as archive:

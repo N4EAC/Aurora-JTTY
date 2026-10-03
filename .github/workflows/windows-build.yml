@@ -81,6 +81,12 @@ jobs:
         run: ./scripts/test-windows-startup.ps1
       - name: Create Windows installer
         run: makensis scripts/windows-installer.nsi
+      - name: Verify installed application
+        shell: pwsh
+        run: |
+          $installer = Start-Process (Resolve-Path 'build/windows-output/Aurora-JTTY-1.0-windows-x64-setup.exe') -ArgumentList '/S' -Wait -PassThru
+          if ($installer.ExitCode -ne 0) { throw "Installer exited with code $($installer.ExitCode)" }
+          ./scripts/test-windows-startup.ps1 -ExecutablePath "$env:LOCALAPPDATA/Programs/Aurora JTTY/bin/Aurora-JTTY.exe"
       - name: Create portable archive and checksums
         shell: pwsh
         run: |

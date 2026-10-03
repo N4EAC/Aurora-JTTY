@@ -1,3 +1,4 @@
+param([string]$ExecutablePath = "build/windows-package/bin/Aurora-JTTY.exe")
 $ErrorActionPreference = 'Stop'
 $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -notmatch 'mingw64[\\/]bin' -and $_ -notmatch 'hamlib-prefix[\\/]bin' }) -join ';'
 $env:QT_QPA_PLATFORM = 'windows'
@@ -5,7 +6,7 @@ $env:JTTY_UI_PREVIEW = Join-Path (Get-Location) 'build/windows-output/Aurora-JTT
 $env:QT_DEBUG_PLUGINS = '1'
 $env:QT_LOGGING_TO_CONSOLE = '1'
 $info = New-Object System.Diagnostics.ProcessStartInfo
-$info.FileName = (Resolve-Path 'build/windows-package/bin/Aurora-JTTY.exe').Path
+$info.FileName = (Resolve-Path $ExecutablePath).Path
 $info.Arguments = '--startup-smoke-test --rig-name CI-STARTUP'
 $info.UseShellExecute = $false
 $info.RedirectStandardOutput = $true
