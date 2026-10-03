@@ -230,8 +230,8 @@ edit('JttyTxLoopbackTestController.cpp', '  QSet<qint64> const expectedRequests 
   QSet<qint64> const expectedRequests {m_firstRequestId, m_secondRequestId};''')
 
 # JTTY has variable-length audio sessions, not a UTC-aligned transmit cycle.
-edit('widgets/mainwindow.h', '  bool m_jttyTxActive;', '  qint64 m_jttyPlayedSamples {-1};\n  bool m_jttyTxActive;')
-edit('widgets/mainwindow_jtty.cpp', 'void MainWindow::advanceJttyTxQueueEpoch()\n{', 'void MainWindow::advanceJttyTxQueueEpoch()\n{\n  m_jttyPlayedSamples = -1;')
+edit('widgets/mainwindow.h', '  bool m_jttyTxActive;', '  qint64 m_jttyPlayedSamples {-1};\n  bool m_jttyTxComplete {false};\n  bool m_jttyTxActive;')
+edit('widgets/mainwindow_jtty.cpp', 'void MainWindow::advanceJttyTxQueueEpoch()\n{', 'void MainWindow::advanceJttyTxQueueEpoch()\n{\n  m_jttyPlayedSamples = -1;\n  m_jttyTxComplete = false;')
 edit('widgets/mainwindow.cpp', 'void MainWindow::recordRawTxPlayout (TxEvidence::TxRawPlayoutSnapshot const& snapshot)\n{', '''void MainWindow::recordRawTxPlayout (TxEvidence::TxRawPlayoutSnapshot const& snapshot)
 {
   if (m_mode == "JTTY" && m_jttyTxActive && snapshot.available) {
@@ -240,7 +240,7 @@ edit('widgets/mainwindow.cpp', 'void MainWindow::recordRawTxPlayout (TxEvidence:
     else if (snapshot.source_served_frames >= 0 && snapshot.buffered_bytes >= 0 && snapshot.bytes_per_frame > 0)
       m_jttyPlayedSamples = qMax(qint64(0), snapshot.source_served_frames - snapshot.buffered_bytes / snapshot.bytes_per_frame);
   }''')
-edit('widgets/mainwindow.cpp', '    progressBar.setVisible(m_transmitting);', '    progressBar.setVisible(m_mode != "JTTY" || m_jttyTxActive);')
+edit('widgets/mainwindow.cpp', '    progressBar.setVisible(m_transmitting);', '    progressBar.setVisible(m_mode != "JTTY" || m_jttyTxActive || m_jttyTxComplete);')
 edit('widgets/mainwindow.cpp', '    if(m_mode!="Echo") {', '    if(m_mode!="Echo" && m_mode!="JTTY") {')
 edit('widgets/mainwindow.cpp', '    if(m_mode=="Echo") {\n      progressBar.setMaximum(3);', '''    if (m_mode == "JTTY") {
       progressBar.setAccessibleName(tr("JTTY transmit audio progress"));
@@ -252,6 +252,10 @@ edit('widgets/mainwindow.cpp', '    if(m_mode=="Echo") {\n      progressBar.setM
         progressBar.setRange(0, 10000);
         progressBar.setValue(int(qMin(qint64(9999), played * 10000 / total)));
         progressBar.setFormat(tr("Tx %1 / %2 s").arg(qMin(played,total)/48000.0,0,'f',1).arg(total/48000.0,0,'f',1));
+      } else if (m_jttyTxComplete) {
+        progressBar.setRange(0,10000);
+        progressBar.setValue(10000);
+        progressBar.setFormat(tr("Transmission complete"));
       } else if (m_jttyTxActive) {
         progressBar.setRange(0,0);
         progressBar.setFormat(tr("Transmitting"));
@@ -280,3 +284,29 @@ edit('JttyTxLoopbackTestController.cpp', '  m_secondRequestId = m_window->jttyLa
 
 # Publish the completed message before stopTx emits synchronous stop callbacks.
 edit('widgets/mainwindow_jtty.cpp', '  resetJttyTxState();\n  stopTx();\n  for (auto const requestId : completedRequestIds)', '  last_tx_label.setText(tr("Last Tx: %1").arg(m_jttyLastTxMessage.trimmed()));\n  resetJttyTxState();\n  stopTx();\n  for (auto const requestId : completedRequestIds)')
+
+# A drained session gets a visible endpoint; halt/error paths never mark complete.
+edit('widgets/mainwindow_jtty.cpp', '  last_tx_label.setText(tr("Last Tx: %1").arg(m_jttyLastTxMessage.trimmed()));', '''  m_jttyTxComplete = true;
+  progressBar.setRange(0,10000);
+  progressBar.setValue(10000);
+  progressBar.setFormat(tr("Transmission complete"));
+  progressBar.setVisible(true);
+  auto const completedEpoch = m_jttyTxQueueEpoch;
+  QTimer::singleShot(1500, this, [this, completedEpoch] {
+    if (m_jttyTxQueueEpoch == completedEpoch && !m_jttyTxActive) {
+      m_jttyTxComplete = false;
+      progressBar.hide();
+    }
+  });
+  last_tx_label.setText(tr("Last Tx: %1").arg(m_jttyLastTxMessage.trimmed()));''')
+edit('JttyTxLoopbackTestController.cpp', '  bool lastMessageVisible = false;', '''  bool completedProgressVisible = false;
+  for (auto bar : m_window->findChildren<QProgressBar*>()) {
+    if (bar->accessibleName() == tr("JTTY transmit audio progress"))
+      completedProgressVisible = !bar->isHidden() && bar->value() == bar->maximum()
+        && bar->format() == tr("Transmission complete");
+  }
+  if (!completedProgressVisible) {
+    fail(tr("Completed JTTY transmission did not show a full progress bar."));
+    return;
+  }
+  bool lastMessageVisible = false;''')
