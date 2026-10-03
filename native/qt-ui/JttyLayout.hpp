@@ -350,14 +350,16 @@ void MainWindow::installJttyLayout() {
   auto themes=ui->menuView->addMenu(tr("Themes"));
   auto themeGroup=new QActionGroup(this);
   themeGroup->setExclusive(true);
-  for(bool dark : {false,true}) {
-    auto action=themes->addAction(dark ? tr("Dark") : tr("Light gray"));
-    action->setObjectName(dark ? "jttyDarkTheme" : "jttyLightTheme");
-    action->setCheckable(true); themeGroup->addAction(action);
-    action->setChecked(m_settings->value("MainWindow/JttyDarkTheme",false).toBool()==dark);
-    connect(action,&QAction::triggered,this,[this,dark] {
-      m_settings->setValue("MainWindow/JttyDarkTheme",dark);
-      applyApplicationStyle(qApp->font(),dark);
+  int const selectedTheme=m_settings->value("MainWindow/JttyAuroraTheme",false).toBool() ? 2 : (m_settings->value("MainWindow/JttyDarkTheme",false).toBool() ? 1 : 0);
+  for(int theme=0;theme<3;++theme) {
+    auto action=themes->addAction(theme==2 ? tr("Aurora") : (theme==1 ? tr("Dark") : tr("Light gray")));
+    action->setObjectName(theme==2 ? "jttyAuroraTheme" : (theme==1 ? "jttyDarkTheme" : "jttyLightTheme"));
+    action->setCheckable(true);themeGroup->addAction(action);
+    action->setChecked(theme==selectedTheme);
+    connect(action,&QAction::triggered,this,[this,theme] {
+      m_settings->setValue("MainWindow/JttyDarkTheme",theme!=0);
+      m_settings->setValue("MainWindow/JttyAuroraTheme",theme==2);
+      applyApplicationStyle(qApp->font(),theme!=0);
     });
   }
   applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
@@ -470,6 +472,13 @@ bool MainWindow::jttyLayoutSmoke() {
   if(!darkTheme->isChecked() || lightTheme->isChecked() || !qApp->styleSheet().contains("#262a30")) return false;
   lightTheme->trigger();
   if(!lightTheme->isChecked() || darkTheme->isChecked() || !qApp->styleSheet().contains("#d0d2d5")) return false;
+  auto auroraTheme=findChild<QAction*>("jttyAuroraTheme");
+  if(!auroraTheme) return false;
+  auroraTheme->trigger();
+  if(!auroraTheme->isChecked() || darkTheme->isChecked() || lightTheme->isChecked()
+     || !qApp->styleSheet().contains("#101e2b") || !qApp->styleSheet().contains("#31c5a4")) return false;
+  auto auroraPreview=qEnvironmentVariable("JTTY_UI_PREVIEW");
+  if(!auroraPreview.isEmpty()) grab().save(auroraPreview+".aurora.png");
   (savedDark ? darkTheme : lightTheme)->trigger();
   bool savedControls=controls->isChecked();
   controls->setChecked(true);
