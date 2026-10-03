@@ -34,7 +34,7 @@ jobs:
             mingw-w64-x86_64-pkg-config mingw-w64-x86_64-nsis
       - name: Cache Hamlib build
         id: hamlib-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             build/hamlib-prefix
@@ -45,6 +45,14 @@ jobs:
         run: |
           bash upstream/wsjtx/.github/scripts/build-hamlib-windows.sh 4.7.2 "$(pwd)/build/hamlib-prefix"
           mv hamlib-src build/hamlib-src
+      - name: Save Hamlib cache
+        if: steps.hamlib-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/hamlib-prefix
+            build/hamlib-src
+          key: aurora-hamlib-4.7.2-windows-2022-v1
       - name: Build Aurora JTTY
         run: bash scripts/build-windows-jtty.sh
       - name: Stage runtime and notices
