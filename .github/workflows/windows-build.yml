@@ -55,8 +55,25 @@ jobs:
             build/hamlib-prefix
             build/hamlib-src
           key: aurora-hamlib-4.7.2-windows-2022-v1
+      - name: Restore compiled application
+        id: app-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/windows-build
+            build/wsjtx-jtty-source
+          key: aurora-windows-app-v1-${{ hashFiles('scripts/prepare*.py', 'scripts/customize-jtty-ui.py', 'scripts/deepen-jtty-debug.py', 'scripts/add-jtty-snr.py', 'scripts/brand-aurora-jtty.py', 'scripts/limit-jtty-fallback.py', 'scripts/build-windows-jtty.sh', 'native/qt-ui/**', 'native/qt-audio/*.hpp', 'native/Assets/Aurora-JTTY.ico') }}
       - name: Build Aurora JTTY
+        if: steps.app-cache.outputs.cache-hit != 'true'
         run: bash scripts/build-windows-jtty.sh
+      - name: Save compiled application
+        if: steps.app-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/windows-build
+            build/wsjtx-jtty-source
+          key: ${{ steps.app-cache.outputs.cache-primary-key }}
       - name: Stage runtime and notices
         run: python scripts/package-windows-jtty.py
       - name: Verify packaged startup

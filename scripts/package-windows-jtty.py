@@ -16,7 +16,10 @@ if stage.exists():
 output.mkdir(parents=True, exist_ok=True)
 exe = stage / 'bin/Aurora-JTTY.exe'
 shutil.copy2(root / 'build/windows-build/wsjtx.exe', exe)
-subprocess.run(['windeployqt', '--release', '--no-translations', '--no-opengl-sw', '--no-system-d3d-compiler', str(exe)], check=True)
+deploy = shutil.which('windeployqt-qt5') or shutil.which('windeployqt')
+if not deploy:
+    raise RuntimeError('Qt Windows deployment tool not found')
+subprocess.run([deploy, '--release', '--no-translations', '--no-opengl-sw', '--no-system-d3d-compiler', str(exe)], check=True)
 # Preserve the upstream resource-directory relationship to the executable.
 resources = stage / 'share/wsjtx'
 resources.mkdir(parents=True)
