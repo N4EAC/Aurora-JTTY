@@ -77,8 +77,8 @@ jobs:
       - name: Stage runtime and notices
         run: python scripts/package-windows-jtty.py
       - name: Verify packaged startup
-        run: |
-          QT_QPA_PLATFORM=offscreen bash upstream/wsjtx/.github/scripts/smoke-launch-windows.sh "$(pwd)/build/windows-package/bin/Aurora-JTTY.exe" --startup-smoke-test --rig-name CI-STARTUP
+        shell: pwsh
+        run: ./scripts/test-windows-startup.ps1
       - name: Create Windows installer
         run: makensis scripts/windows-installer.nsi
       - name: Create portable archive and checksums
