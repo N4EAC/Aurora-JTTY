@@ -98,4 +98,5 @@ jobs:
           name: windows-build-diagnostics
           path: |
             launch.out
+            launch.png
             build/windows-build/CMakeFiles/CMakeConfigureLog.yaml
