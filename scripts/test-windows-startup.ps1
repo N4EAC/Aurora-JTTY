@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -notmatch 'mingw64[\\/]bin' -and $_ -notmatch 'hamlib-prefix[\\/]bin' }) -join ';'
-$env:QT_QPA_PLATFORM = 'offscreen'
+$env:QT_QPA_PLATFORM = 'windows'
+$env:JTTY_UI_PREVIEW = Join-Path (Get-Location) 'build/windows-output/Aurora-JTTY-windows.png'
 $env:QT_DEBUG_PLUGINS = '1'
 $env:QT_LOGGING_TO_CONSOLE = '1'
 $info = New-Object System.Diagnostics.ProcessStartInfo
