@@ -20,13 +20,14 @@ subprocess.run(['windeployqt', '--release', '--no-translations', '--no-opengl-sw
 # Preserve the upstream resource-directory relationship to the executable.
 resources = stage / 'share/wsjtx'
 resources.mkdir(parents=True)
-for name in ('cty.dat', 'ALLCALL.TXT'):
+for name in ('cty.dat', 'cty.dat_copyright.txt', 'ALLCALL7.TXT', 'CALL3.TXT', 'grid.dat'):
     for base in (root / 'build/wsjtx-jtty-source', root / 'build/windows-build'):
         if (base / name).exists():
             shutil.copy2(base / name, resources / name)
             break
 mingw = Path(subprocess.check_output(['cygpath', '-w', '/mingw64'], text=True).strip())
 pacman_db = Path(subprocess.check_output(['cygpath', '-w', '/var/lib/pacman/local'], text=True).strip())
+shutil.copytree(root / 'build/wsjtx-jtty-source/Palettes', resources / 'Palettes', dirs_exist_ok=True)
 prefixes = [root / 'build/hamlib-prefix/bin', mingw / 'bin']
 search = {p.name.lower(): p for base in prefixes for p in base.glob('*.dll')}
 system = Path('C:/Windows/System32')
@@ -60,6 +61,8 @@ for path in origins:
     packages.add(result.stdout.strip())
 licenses = stage / 'licenses'
 licenses.mkdir()
+shutil.copy2(root / 'upstream/wsjtx/contrib/QDarkStyleSheet/LICENSE.md', licenses / 'QDarkStyleSheet-LICENSE.md')
+shutil.copy2(root / 'upstream/wsjtx/cty.dat_copyright.txt', licenses / 'cty.dat_copyright.txt')
 for name in ('COPYING', 'THIRD_PARTY_NOTICES.md', 'docs/PUBLICATION-REQUIREMENTS.md'):
     shutil.copy2(root / name, licenses / Path(name).name)
 for path in (root / 'build/hamlib-src').glob('COPYING*'):

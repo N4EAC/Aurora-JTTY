@@ -34,3 +34,5 @@ Upstream end-user documentation is separately licensed CC BY-ND 4.0 (see https:/
 ## Windows runtime distribution
 
 Windows packages include dynamically linked Qt, Hamlib, FFTW, Boost and MinGW runtime dependencies. The licenses/ directory preserves package notices and identifies exact MSYS2 source-package versions. The build artifact includes matching dependency-source archives and complete Aurora/Hamlib source with build scripts. The macOS developer bundle continues to use external Homebrew libraries. Redistributing a Windows package requires preserving this source access and all applicable notices and replacement/relinking rights.
+
+QDarkStyleSheet resources retain their original MIT code license and asset terms in upstream/wsjtx/contrib/QDarkStyleSheet/LICENSE.md. Country data retains the supplied permission/copyright notice in upstream/wsjtx/cty.dat_copyright.txt. Windows packages include copies of these notices.
