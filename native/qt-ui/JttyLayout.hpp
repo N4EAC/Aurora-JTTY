@@ -70,53 +70,60 @@ void MainWindow::installJttyLayout() {
     layout->addWidget(widget);
     widget->show();
   };
+  ui->menuMode->menuAction()->setVisible(false);
   auto top = panel(root, "jttyFrequencyStrip");
   auto frequencies = new QGridLayout(top);
   frequencies->setContentsMargins(16, 12, 16, 12);
-  frequencies->setHorizontalSpacing(16);
-  auto dial = new QVBoxLayout;
+  frequencies->setHorizontalSpacing(12);
+  frequencies->setVerticalSpacing(8);
+  frequencies->setColumnStretch(0,1);
   auto radioMode=label(tr("CAT mode unavailable"),top);
   radioMode->setObjectName("jttyRadioMode");
-  dial->addWidget(radioMode);
-  mount(dial, ui->labDialFreq);
+  frequencies->addWidget(radioMode,0,0);
+  ui->labDialFreq->setParent(top); ui->labDialFreq->show();
+  ui->labDialFreq->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
   ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
-  auto preset = new QHBoxLayout;
-  mount(preset, ui->bandComboBox);
-  mount(preset, ui->readFreq);
-  ui->readFreq->setFixedSize(24,24);
-  dial->addLayout(preset);
+  frequencies->addWidget(ui->labDialFreq,1,0);
+  auto preset=new QHBoxLayout;
+  preset->setSpacing(8);
+  mount(preset,ui->bandComboBox); mount(preset,ui->readFreq);
+  ui->readFreq->setFixedSize(28,28);
   ui->bandComboBox->setMinimumWidth(205);
-  frequencies->addLayout(dial, 0, 0, 2, 1);
-  auto rx = new QVBoxLayout;
-  rx->addWidget(label(tr("RECEIVE OFFSET · Hz"), top));
-  mount(rx, ui->RxFreqSpinBox_2);
-  mount(rx, ui->pbR2T_2);
+  ui->bandComboBox->setFixedHeight(32);
+  frequencies->addLayout(preset,2,0);
+  frequencies->addWidget(label(tr("RECEIVE OFFSET · Hz"),top),0,1);
+  frequencies->addWidget(label(tr("TRANSMIT OFFSET · Hz"),top),0,2);
+  frequencies->addWidget(label(tr("RX TOLERANCE · ±Hz"),top),0,3);
+  auto placeControl=[&](QWidget *widget,int row,int column) {
+    widget->setMinimumSize(0,0);
+    widget->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);
+    widget->setFixedHeight(32);
+    widget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    frequencies->addWidget(widget,row,column); widget->show();
+  };
+  placeControl(ui->RxFreqSpinBox_2,1,1);
+  placeControl(ui->TxFreqSpinBox_2,1,2);
+  placeControl(ui->sbFtol_2,1,3);
   ui->pbR2T_2->setText(tr("Copy Rx → Tx"));
-  frequencies->addLayout(rx, 0, 1, 2, 1);
-  auto tx = new QVBoxLayout;
-  tx->addWidget(label(tr("TRANSMIT OFFSET · Hz"), top));
-  mount(tx, ui->TxFreqSpinBox_2);
-  mount(tx, ui->pbT2R_2);
   ui->pbT2R_2->setText(tr("Copy Tx → Rx"));
-  frequencies->addLayout(tx, 0, 2, 2, 1);
-  auto tolerance = new QVBoxLayout;
-  tolerance->addWidget(label(tr("RX TOLERANCE · ±Hz"), top));
-  mount(tolerance, ui->sbFtol_2);
-  tolerance->addWidget(label(tr("Mode: JTTY"), top));
-  frequencies->addLayout(tolerance, 0, 3, 2, 1);
-  auto cat = label(QString{}, top);
+  placeControl(ui->pbR2T_2,2,1); placeControl(ui->pbT2R_2,2,2);
+  for(int column=1;column<=3;++column) frequencies->setColumnMinimumWidth(column,140);
+  // Keep action columns balanced and prevent tolerance absorbing spare width.
+  ui->RxFreqSpinBox_2->setMaximumWidth(160);
+  ui->TxFreqSpinBox_2->setMaximumWidth(160);
+  ui->sbFtol_2->setMaximumWidth(160);
+  ui->pbR2T_2->setMaximumWidth(160);ui->pbT2R_2->setMaximumWidth(160);
+  auto cat=label(QString{},top);
   cat->setObjectName("jttyCatStatus");
-  frequencies->addWidget(cat, 0, 4);
-  auto settings = new QPushButton(tr("Radio / Audio…"), top);
+  frequencies->addWidget(cat,0,4,1,3,Qt::AlignLeft|Qt::AlignVCenter);
+  auto settings=new QPushButton(tr("Radio / Audio…"),top);
   settings->setObjectName("jttySettingsButton");
-  connect(settings, &QPushButton::clicked, this, &MainWindow::on_actionSettings_triggered);
-  frequencies->addWidget(settings, 1, 4);
-  frequencies->addWidget(ui->monitorButton, 0, 5);
-  frequencies->addWidget(ui->stopTxButton, 0, 6);
-  frequencies->addWidget(ui->tuneButton, 1, 5);
-  frequencies->addWidget(ui->logQSOButton, 1, 6);
-  for (auto widget : {ui->monitorButton, ui->stopTxButton, ui->tuneButton, ui->logQSOButton}) {
-    widget->setMinimumWidth(110); widget->show();
+  connect(settings,&QPushButton::clicked,this,&MainWindow::on_actionSettings_triggered);
+  placeControl(settings,1,4);
+  placeControl(ui->monitorButton,1,5); placeControl(ui->stopTxButton,1,6);
+  placeControl(ui->tuneButton,2,5); placeControl(ui->logQSOButton,2,6);
+  for(auto widget : {settings,ui->monitorButton,ui->stopTxButton,ui->tuneButton,ui->logQSOButton}) {
+    widget->setMinimumWidth(110);widget->setMaximumWidth(140);
   }
   outer->addWidget(top);
 
@@ -305,7 +312,7 @@ void MainWindow::installJttyLayout() {
   connect(m_soundInput,&AudioInputSource::error,this,&MainWindow::jttyNoteInputError);
   auto update = [this,cat,scope,devices,counter,reading,meter,radioMode] {
     QString mode;
-    if(m_config.is_transceiver_online()) {
+    if(m_config.rig_name()!="None" && m_config.is_transceiver_online()) {
       switch(m_rigState.mode()) {
         case Transceiver::CW: mode="CW"; break;
         case Transceiver::CW_R: mode="CW-R"; break;
