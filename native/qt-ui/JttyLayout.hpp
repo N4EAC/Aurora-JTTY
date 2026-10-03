@@ -74,7 +74,11 @@ void MainWindow::installJttyLayout() {
   auto top = panel(root, "jttyFrequencyStrip");
   auto frequencies = new QGridLayout(top);
   frequencies->setContentsMargins(16, 12, 16, 12);
+  #ifdef Q_OS_WIN
+  frequencies->setHorizontalSpacing(8);
+#else
   frequencies->setHorizontalSpacing(12);
+#endif
   frequencies->setVerticalSpacing(8);
   frequencies->setColumnStretch(0,0);
   for(int column=1;column<=6;++column) frequencies->setColumnStretch(column,1);
@@ -84,13 +88,17 @@ void MainWindow::installJttyLayout() {
   ui->labDialFreq->setParent(top); ui->labDialFreq->show();
   ui->labDialFreq->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
   ui->labDialFreq->setStyleSheet("background: transparent; font-size: 28px; font-weight: bold; border: none;");
-  ui->labDialFreq->setMinimumWidth(0);ui->labDialFreq->setMaximumWidth(310);
+  ui->labDialFreq->setMinimumWidth(220);ui->labDialFreq->setMaximumWidth(310);
   frequencies->addWidget(ui->labDialFreq,1,0);
   auto preset=new QHBoxLayout;
   preset->setSpacing(8);
   mount(preset,ui->bandComboBox); mount(preset,ui->readFreq);
   ui->readFreq->setFixedSize(28,28);
+  #ifdef Q_OS_WIN
+  ui->bandComboBox->setFixedWidth(180);
+#else
   ui->bandComboBox->setFixedWidth(230);
+#endif
   preset->setAlignment(Qt::AlignLeft);
   ui->bandComboBox->setFixedHeight(32);
   frequencies->addLayout(preset,2,0);
@@ -110,7 +118,7 @@ void MainWindow::installJttyLayout() {
   ui->pbR2T_2->setText(tr("Copy Rx → Tx"));
   ui->pbT2R_2->setText(tr("Copy Tx → Rx"));
   placeControl(ui->pbR2T_2,2,1); placeControl(ui->pbT2R_2,2,2);
-  for(int column=1;column<=3;++column) frequencies->setColumnMinimumWidth(column,140);
+  for(int column=1;column<=3;++column) frequencies->setColumnMinimumWidth(column,120);
   // Keep action columns balanced and prevent tolerance absorbing spare width.
   ui->RxFreqSpinBox_2->setMaximumWidth(220);
   ui->TxFreqSpinBox_2->setMaximumWidth(220);
@@ -126,7 +134,12 @@ void MainWindow::installJttyLayout() {
   placeControl(ui->monitorButton,1,5); placeControl(ui->stopTxButton,1,6);
   placeControl(ui->tuneButton,2,5); placeControl(ui->logQSOButton,2,6);
   for(auto widget : {settings,ui->monitorButton,ui->stopTxButton,ui->tuneButton,ui->logQSOButton}) {
-    widget->setMinimumWidth(130);widget->setMaximumWidth(220);
+    #ifdef Q_OS_WIN
+    widget->setMinimumWidth(100);
+#else
+    widget->setMinimumWidth(130);
+#endif
+    widget->setMaximumWidth(220);
   }
   outer->addWidget(top);
 
@@ -232,6 +245,12 @@ void MainWindow::installJttyLayout() {
   conversationLayout->addLayout(options);
   auto tools = new QHBoxLayout;
   mount(tools,ui->lookupButton); mount(tools,ui->addButton); mount(tools,ui->ignoreButton);
+#ifdef Q_OS_WIN
+  for(auto button:{ui->lookupButton,ui->addButton,ui->ignoreButton}) {
+    button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+    button->setMinimumWidth(70);button->setMaximumWidth(110);
+  }
+#endif
   tools->addStretch(); mount(tools,ui->stopButton);
   conversationLayout->addLayout(tools);
 
