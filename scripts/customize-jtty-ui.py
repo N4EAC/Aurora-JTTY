@@ -228,3 +228,55 @@ edit('JttyTxLoopbackTestController.cpp', '  QSet<qint64> const expectedRequests 
     return;
   }
   QSet<qint64> const expectedRequests {m_firstRequestId, m_secondRequestId};''')
+
+# JTTY has variable-length audio sessions, not a UTC-aligned transmit cycle.
+edit('widgets/mainwindow.h', '  bool m_jttyTxActive;', '  qint64 m_jttyPlayedSamples {-1};\n  bool m_jttyTxActive;')
+edit('widgets/mainwindow_jtty.cpp', 'void MainWindow::advanceJttyTxQueueEpoch()\n{', 'void MainWindow::advanceJttyTxQueueEpoch()\n{\n  m_jttyPlayedSamples = -1;')
+edit('widgets/mainwindow.cpp', 'void MainWindow::recordRawTxPlayout (TxEvidence::TxRawPlayoutSnapshot const& snapshot)\n{', '''void MainWindow::recordRawTxPlayout (TxEvidence::TxRawPlayoutSnapshot const& snapshot)
+{
+  if (m_mode == "JTTY" && m_jttyTxActive && snapshot.available) {
+    if (snapshot.processed_usecs >= 0 && snapshot.sample_rate_hz > 0)
+      m_jttyPlayedSamples = snapshot.processed_usecs * 48000 / 1000000;
+    else if (snapshot.source_served_frames >= 0 && snapshot.buffered_bytes >= 0 && snapshot.bytes_per_frame > 0)
+      m_jttyPlayedSamples = qMax(qint64(0), snapshot.source_served_frames - snapshot.buffered_bytes / snapshot.bytes_per_frame);
+  }''')
+edit('widgets/mainwindow.cpp', '    progressBar.setVisible(m_transmitting);', '    progressBar.setVisible(m_mode != "JTTY" || m_jttyTxActive);')
+edit('widgets/mainwindow.cpp', '    if(m_mode!="Echo") {', '    if(m_mode!="Echo" && m_mode!="JTTY") {')
+edit('widgets/mainwindow.cpp', '    if(m_mode=="Echo") {\n      progressBar.setMaximum(3);', '''    if (m_mode == "JTTY") {
+      progressBar.setAccessibleName(tr("JTTY transmit audio progress"));
+      progressBar.setAccessibleDescription(tr("Audio played in the current JTTY transmit session; includes queued messages."));
+      qint64 const total = jttyTxCommittedSamples();
+      qint64 const played = m_jttyPlayedSamples >= 0 ? m_jttyPlayedSamples
+        : (m_jttyTxUsesTciAudio ? -1 : m_jttyTxQueue->progress().served_samples);
+      if (m_jttyTxActive && total > 0 && played >= 0) {
+        progressBar.setRange(0, 10000);
+        progressBar.setValue(int(qMin(qint64(9999), played * 10000 / total)));
+        progressBar.setFormat(tr("Tx %1 / %2 s").arg(qMin(played,total)/48000.0,0,'f',1).arg(total/48000.0,0,'f',1));
+      } else if (m_jttyTxActive) {
+        progressBar.setRange(0,0);
+        progressBar.setFormat(tr("Transmitting"));
+      } else {
+        progressBar.setRange(0,10000);
+        progressBar.setValue(0);
+      }
+    }
+    if(m_mode=="Echo") {
+      progressBar.setMaximum(3);''')
+
+edit('JttyTxLoopbackTestController.cpp', '#include <QLabel>', '#include <QLabel>\n#include <QProgressBar>')
+edit('JttyTxLoopbackTestController.cpp', '  m_secondRequestId = m_window->jttyLayoutSubmitFixture (', '''  bool progressAdvanced = false;
+  for (auto bar : m_window->findChildren<QProgressBar*>()) {
+    if (bar->accessibleName() == tr("JTTY transmit audio progress")) {
+      progressAdvanced = !bar->isHidden() && bar->maximum() == 10000
+        && bar->value() > 0 && bar->value() < bar->maximum()
+        && bar->format().startsWith("Tx ");
+    }
+  }
+  if (!progressAdvanced) {
+    fail(tr("JTTY transmit progress did not advance during real audio playback."));
+    return;
+  }
+  m_secondRequestId = m_window->jttyLayoutSubmitFixture (''')
+
+# Publish the completed message before stopTx emits synchronous stop callbacks.
+edit('widgets/mainwindow_jtty.cpp', '  resetJttyTxState();\n  stopTx();\n  for (auto const requestId : completedRequestIds)', '  last_tx_label.setText(tr("Last Tx: %1").arg(m_jttyLastTxMessage.trimmed()));\n  resetJttyTxState();\n  stopTx();\n  for (auto const requestId : completedRequestIds)')
