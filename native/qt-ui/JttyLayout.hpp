@@ -284,7 +284,11 @@ void MainWindow::installJttyLayout() {
   auto meter = new QProgressBar(waterfall);
   meter->setRange(0,90); meter->setTextVisible(false); meter->setFixedSize(100,12);
   waterfallHeader->addWidget(meter);
-  if (reading) mount(waterfallHeader,reading);
+  if (reading) {
+    mount(waterfallHeader,reading);
+    reading->setFixedWidth(reading->fontMetrics().horizontalAdvance("−100 dB")+12);
+    reading->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+  }
   ui->signal_meter_widget->hide();
   waterfallHeader->addWidget(label(tr("Tx attenuation"),waterfall));
   mount(waterfallHeader,ui->outAttenuation);
