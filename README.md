@@ -14,9 +14,9 @@ Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-
 
 The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
 
-[Windows x64 preview release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0-windows-preview/Aurora-JTTY-1.0-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
+[Experimental Windows x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.0-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.0-windows-preview/Aurora-JTTY-1.0-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
 
-The Windows preview includes its runtime dependencies and is unsigned. Native Windows startup and installation are checked automatically; radio USB audio and CAT/PTT require testing with your station. Complete application and dependency source packages accompany the release.
+**The Windows version is experimental.** It includes its runtime dependencies and is unsigned. Native Windows startup and installation are checked automatically; radio USB audio and CAT/PTT require testing with your station. Complete application and dependency source packages accompany the release.
 
 ## Using Aurora JTTY
 
