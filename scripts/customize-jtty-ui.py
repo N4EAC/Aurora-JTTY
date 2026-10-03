@@ -13,6 +13,10 @@ def edit(name, old, new):
     assert old in text, (name, old[:100])
     path.write_text(text.replace(old, new))
 
+# Transmitted JTTY text needs an explicit foreground on its yellow highlight.
+# Restore the original format so subsequent receive text follows the theme.
+edit('widgets/mainwindow_jtty.cpp', '  QTextCharFormat format = cursor.charFormat();\n  format.setBackground(QBrush(QColor(Qt::yellow)));\n  cursor.setCharFormat(format);\n  cursor.insertText(Jtty::wrapMessage(message));\n  format.setBackground(QBrush(QColor(Qt::white)));\n  cursor.setCharFormat(format);', '  QTextCharFormat const previousFormat = cursor.charFormat();\n  QTextCharFormat format = previousFormat;\n  format.setBackground(QBrush(QColor(Qt::yellow)));\n  format.setForeground(QBrush(QColor(Qt::black)));\n  cursor.setCharFormat(format);\n  cursor.insertText(Jtty::wrapMessage(message));\n  cursor.setCharFormat(previousFormat);')
+
 # Save the last partial JTTY receive buffer on every monitoring stop path.
 # JTTY decoding is synchronous, so its decoded flag is final at this point.
 edit('widgets/mainwindow.cpp', 'void MainWindow::monitor (bool state)\n{', '''void MainWindow::monitor (bool state)
