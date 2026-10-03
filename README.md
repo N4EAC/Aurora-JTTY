@@ -39,10 +39,6 @@ Upstream end-user guides are separately licensed **CC BY-ND 4.0**. Preserve thei
 
 This is an unsigned developer build requiring compatible Homebrew dependencies, not a standalone public installer. The DMG includes the application, corresponding source archive and legal notices. Recreate it with `sh scripts/package-macos-dmg.sh` after building the app.
 
-## Windows 10/11
-
-A Windows x64 version is feasible because the upstream Qt/C++/Fortran application and Hamlib support Windows builds. This repository's current build/package scripts target macOS; Windows is not yet built or verified. A Windows version needs a compatible Qt/MinGW/gfortran toolchain and dependencies, Aurora branding/resources, DLL deployment and CAT/PTT/audio testing on Windows. macOS-specific CoreAudio diagnostics are conditionally compiled and would use the Windows audio backend there. The legacy Swift client is not the Windows port.
-
 ## Build the WSJT-X-based client
 
 With Xcode command-line tools and Homebrew:
