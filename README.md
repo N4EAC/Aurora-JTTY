@@ -1,5 +1,7 @@
 # Aurora JTTY 1.0
 
+![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-blue)
+
 Aurora JTTY retains the existing JTTY Workbench settings, recordings and logs so upgrading preserves station configuration.
 
 The current client is a JTTY-only fork of WSJT-X, using its Qt interface, receive/transmit audio, JTTY messaging, waterfall, frequency selector, station settings and Hamlib CAT/PTT control. GPLv3 or later. This independent build has no date-based expiration. The original Swift client remains in the repository for reference.
@@ -29,6 +31,16 @@ Aurora JTTY is an independent, unofficial fork based on WSJT-X. The covered appl
 Binary releases require complete corresponding source, including the pinned upstream source and our modifications/build scripts, plus applicable dependency notices and source obligations. This private repository alone does not provide source access to public binary recipients. The current developer app depends on Homebrew libraries and is not a self-contained, signed or notarized public release.
 
 Upstream end-user guides are separately licensed **CC BY-ND 4.0**. Preserve their attribution and redistribute them unmodified, or link to the originals; write independent documentation for this fork. This is separate from the software's GPL license. The review is not an exhaustive trademark, patent or final release-artifact clearance.
+
+## macOS download
+
+[Download the macOS Apple Silicon DMG](installers/Aurora-JTTY-1.0-macOS-arm64.dmg) · [SHA-256 checksum](installers/Aurora-JTTY-1.0-macOS-arm64.dmg.sha256) · [Installation instructions](docs/MACOS-INSTALL.md)
+
+This is an unsigned developer build requiring compatible Homebrew dependencies, not a standalone public installer. The DMG includes the application, corresponding source archive and legal notices. Recreate it with `sh scripts/package-macos-dmg.sh` after building the app.
+
+## Windows 10/11
+
+A Windows x64 version is feasible because the upstream Qt/C++/Fortran application and Hamlib support Windows builds. This repository's current build/package scripts target macOS; Windows is not yet built or verified. A Windows version needs a compatible Qt/MinGW/gfortran toolchain and dependencies, Aurora branding/resources, DLL deployment and CAT/PTT/audio testing on Windows. macOS-specific CoreAudio diagnostics are conditionally compiled and would use the Windows audio backend there. The legacy Swift client is not the Windows port.
 
 ## Build the WSJT-X-based client
 
