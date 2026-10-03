@@ -19,3 +19,6 @@ edit('Transceiver/TransceiverFactory.cpp', '#if defined (WIN32)', '#if defined (
 # The version resource generator reads the Windows ICO from this path.
 import shutil
 shutil.copy2(pathlib.Path(__file__).resolve().parent.parent / 'native/Assets/Aurora-JTTY.ico', source / 'icons/windows-icons/wsjtx.ico')
+
+# Windows Explorer shows Aurora's release version, while source provenance remains in About.
+edit('CMake/Modules/generate_version_info.cmake', '# Force resource files into the top-level build directory', 'if (WIN32 AND PRODUCT_NAME STREQUAL "wsjtx")\n  set(PRODUCT_VERSION_MAJOR 1)\n  set(PRODUCT_VERSION_MINOR 0)\n  set(PRODUCT_VERSION_PATCH 0)\n  set(PRODUCT_VERSION_TWEAK 0)\n  set(PRODUCT_VERSION_REVISION "")\n  set(PRODUCT_FILE_DESCRIPTION "Aurora JTTY")\n  set(PRODUCT_ORIGINAL_FILENAME "Aurora-JTTY.exe")\nendif ()\n# Force resource files into the top-level build directory')

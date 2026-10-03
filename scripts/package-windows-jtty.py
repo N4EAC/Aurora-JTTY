@@ -62,6 +62,9 @@ licenses = stage / 'licenses'
 licenses.mkdir()
 for name in ('COPYING', 'THIRD_PARTY_NOTICES.md', 'docs/PUBLICATION-REQUIREMENTS.md'):
     shutil.copy2(root / name, licenses / Path(name).name)
+for path in (root / 'build/hamlib-src').glob('COPYING*'):
+    if path.is_file():
+        shutil.copy2(path, licenses / ('Hamlib-' + path.name))
 shutil.copy2(root / 'docs/WINDOWS-INSTALL.md', stage / 'README.md')
 shutil.copy2(root / 'native/Assets/Aurora-JTTY.ico', stage / 'Aurora-JTTY.ico')
 source_lines = []
