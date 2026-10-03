@@ -17,4 +17,4 @@ This review supports publication under those conditions, not an unconditional gu
 
 Sources: upstream/wsjtx/COPYING, upstream/wsjtx/doc/common/license.adoc, upstream/wsjtx/TRADEMARK.md, THIRD_PARTY_NOTICES.md, https://www.gnu.org/licenses/gpl-3.0.html and https://www.gnu.org/licenses/gpl-faq.en.html.
 
-Upstream end-user documentation is separately licensed CC BY-ND 4.0 (see research/WSJTX-DOCS-LICENSE.md). Redistribute those guides unmodified with attribution and links to the originals/license, or write independent fork documentation; do not publish adapted versions without permission. Original guide: https://wsjtx.github.io/wsjtx/guide.html . License: https://creativecommons.org/licenses/by-nd/4.0/ .
+Upstream end-user documentation is separately licensed CC BY-ND 4.0 (see https://github.com/WSJTX/wsjtx/blob/567ad29ce6abf3d4a44f181cdbc7ceba0d73e5f4/DOCS-LICENSE.md). Redistribute those guides unmodified with attribution and links to the originals/license, or write independent fork documentation; do not publish adapted versions without permission. Original guide: https://wsjtx.github.io/wsjtx/guide.html . License: https://creativecommons.org/licenses/by-nd/4.0/ .

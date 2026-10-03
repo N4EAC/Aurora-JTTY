@@ -24,10 +24,6 @@ Aurora JTTY is an independent, unofficial fork based on WSJT-X. The covered appl
 - [Full GPL license](COPYING)
 - [Third-party licenses and copyright attribution](THIRD_PARTY_NOTICES.md)
 - [Publication requirements and current packaging limitations](docs/PUBLICATION-REQUIREMENTS.md)
-- [Source provenance and independent-client licensing assessment](research/JTTY-LICENSING.md)
-- [Preserved upstream trademark policy](research/WSJTX-TRADEMARK.md)
-- [Preserved upstream documentation license policy](research/WSJTX-DOCS-LICENSE.md)
-- [Original upstream copyright and license notice](research/WSJTX-license.adoc)
 
 Binary releases require complete corresponding source, including the pinned upstream source and our modifications/build scripts, plus applicable dependency notices and source obligations. GitHub-generated source archives omit submodule contents; use the complete corresponding source archive attached to the release or clone with submodules. The current developer app depends on Homebrew libraries and is not a self-contained, signed or notarized public release.
 
@@ -81,14 +77,13 @@ Input WAV files must be 12 kHz mono PCM16, at most 180 seconds. Messages support
 - `native/radio.c`: Hamlib commands, serialization and timed PTT release.
 - `native/live_bridge.f90`: streaming upstream decoder and encoder bindings.
 - `native/engine.f90` and `client/jtty.py`: recorded-audio tools.
-- `research/`: licensing, pinned provenance and verification results.
 
 The PTT watchdog releases a timed transmission while this process and the control connection remain functional. It cannot guarantee release after forcible process termination or a disconnected USB cable. Stop/PTT OFF and graceful shutdown attempt immediate release and report failures.
 
-See [verification details](research/PROTOTYPE-STATUS.md), `COPYING`, `THIRD_PARTY_NOTICES.md`, and [licensing research](research/JTTY-LICENSING.md). Preserve notices and provide corresponding source when distributing covered binaries. No upstream endorsement is claimed.
+
+Preserve copyright notices and provide corresponding source when distributing covered binaries. No upstream endorsement is claimed. See [third-party notices](THIRD_PARTY_NOTICES.md) and [publication requirements](docs/PUBLICATION-REQUIREMENTS.md).
 
 The original app icon is in `native/Assets`; regenerate it with `swift scripts/make-icon.swift native/Assets` followed by `iconutil -c icns native/Assets/JTTY.iconset -o native/Assets/JTTY.icns`.
 
-See [the WSJT-X audio/CAT review](research/WSJTX-AUDIO-CAT-REVIEW.md) for architecture differences, the serial-control-line correction and remaining hardware limitations.
 
 Receive capture now compiles the pinned upstream `Audio/soundin.cpp`, `Audio/AudioDevice.cpp`, and `Audio/AudioStreamDescriptor.cpp` directly. The Qt helper owns its audio thread and event loop; the Swift app receives selected-channel PCM16 through a pipe. This replaces the prior custom capture implementations. The helper requires Qt 5.15; Homebrew currently marks Qt 5 deprecated. The playback backend remains CoreAudio.

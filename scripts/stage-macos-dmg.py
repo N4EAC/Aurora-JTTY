@@ -11,7 +11,7 @@ if stage.exists():
 stage.mkdir(parents=True)
 shutil.copytree(root / "build/Aurora JTTY.app", stage / "Aurora JTTY.app")
 (stage / "Applications").symlink_to("/Applications")
-for name in ("COPYING", "THIRD_PARTY_NOTICES.md", "docs/PUBLICATION-REQUIREMENTS.md", "docs/MACOS-INSTALL.md", "research/WSJTX-TRADEMARK.md", "research/WSJTX-DOCS-LICENSE.md"):
+for name in ("COPYING", "THIRD_PARTY_NOTICES.md", "docs/PUBLICATION-REQUIREMENTS.md", "docs/MACOS-INSTALL.md", "upstream/wsjtx/TRADEMARK.md", "upstream/wsjtx/DOCS-LICENSE.md"):
     shutil.copy2(root / name, stage / Path(name).name)
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
 with tarfile.open(stage / "Aurora-JTTY-1.0-source.tar.gz", "w:gz") as archive:
