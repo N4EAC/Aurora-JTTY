@@ -1,0 +1,65 @@
+name: Build Aurora JTTY Windows
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Preserve source line endings
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git make tar autoconf automake libtool
+            mingw-w64-x86_64-gcc mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-python mingw-w64-x86_64-boost
+            mingw-w64-x86_64-qt5-base mingw-w64-x86_64-qt5-multimedia
+            mingw-w64-x86_64-qt5-serialport mingw-w64-x86_64-qt5-svg
+            mingw-w64-x86_64-qt5-tools mingw-w64-x86_64-qt5-websockets
+            mingw-w64-x86_64-qt5-activeqt mingw-w64-x86_64-fftw
+            mingw-w64-x86_64-libusb mingw-w64-x86_64-portaudio
+            mingw-w64-x86_64-pkg-config mingw-w64-x86_64-nsis
+      - name: Build Hamlib
+        run: |
+          bash upstream/wsjtx/.github/scripts/build-hamlib-windows.sh 4.7.2 "$(pwd)/build/hamlib-prefix"
+          mv hamlib-src build/hamlib-src
+      - name: Build Aurora JTTY
+        run: bash scripts/build-windows-jtty.sh
+      - name: Stage runtime and notices
+        run: python scripts/package-windows-jtty.py
+      - name: Verify packaged startup
+        run: |
+          QT_QPA_PLATFORM=offscreen bash upstream/wsjtx/.github/scripts/smoke-launch-windows.sh "$(pwd)/build/windows-package/bin/Aurora-JTTY.exe" --startup-smoke-test --rig-name CI-STARTUP
+      - name: Create Windows installer
+        run: makensis scripts/windows-installer.nsi
+      - name: Create portable archive and checksums
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows-package/* -DestinationPath build/windows-output/Aurora-JTTY-1.0-windows-x64-portable.zip
+          Get-ChildItem build/windows-output -File -Recurse | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content build/windows-output/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aurora-JTTY-1.0-windows-x64
+          path: build/windows-output/*
+          retention-days: 30
+      - name: Upload startup diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-diagnostics
+          path: |
+            launch.out
+            build/windows-build/CMakeFiles/CMakeConfigureLog.yaml
