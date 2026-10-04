@@ -6,4 +6,4 @@ Use DATA USB and the FT-710's USB modulation source for digital operation. Set U
 
 The interface provides Monitor, Tune and Halt Tx. Tune/PTT operations key the radio. Begin with receive monitoring, then set appropriate power and modulation levels for transmission.
 
-macOS audio mode must be set to 44.100 not 48.000 for both input and output USB Audio Device(s).
+**Yaesu FT-710 on macOS:** In **Audio MIDI Setup**, select the radio’s **USB Audio Device** and set **Format to 44,100 Hz for both input and output**, instead of 48,000 Hz. This setting is required for the FT-710 to work with Aurora JTTY on macOS. Stop monitoring before changing the format, then reselect the USB input/output in **Radio / Audio** and restart Monitor.

@@ -185,7 +185,7 @@ struct StationSetupView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Station Setup").font(.title.bold())
-                Text("FT-710 USB: use the Enhanced serial port for CAT and the USB audio device for input and output. Close WSJT-X/fldigi's radio connection while this app owns the port.")
+                Text("FT-710 on macOS requires USB input and output Format set to 44,100 Hz in Audio MIDI Setup, instead of 48,000 Hz. FT-710 USB: use the Enhanced serial port for CAT and the USB audio device for input and output. Close WSJT-X/fldigi's radio connection while this app owns the port.")
                     .foregroundStyle(.secondary)
                 GroupBox("Radio · Hamlib") {
                     VStack(alignment: .leading, spacing: 10) {

@@ -110,7 +110,7 @@ final class LiveStation: ObservableObject {
     @Published var radioPTT = false
     @Published var dial = "Disconnected"
     @Published var radioMode = ""
-    @Published var status = "Select USB audio devices and connect the FT-710."
+    @Published var status = "Select USB audio devices and connect the FT-710. On macOS, set USB input and output to 44,100 Hz in Audio MIDI Setup, instead of 48,000 Hz."
     @Published var failure = ""
     @Published var peak: Float = 0
     @Published var waterfall: [[Float]] = []

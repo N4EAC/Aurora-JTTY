@@ -24,6 +24,8 @@ Version 1.1 fixes transmitted-message text contrast: black text on the yellow hi
 
 Configure your callsign, grid, radio, CAT serial port and USB audio input/output in **Radio / Audio**. See [station setup](docs/WSJTX-JTTY-SETUP.md). Select a band and confirm the dial frequency before pressing **Monitor**.
 
+**Yaesu FT-710 on macOS:** In **Audio MIDI Setup**, select the radio’s **USB Audio Device** and set **Format to 44,100 Hz for both input and output**, instead of 48,000 Hz. This setting is required for the FT-710 to work with Aurora JTTY on macOS. Stop monitoring before changing the format, then reselect the USB input/output in **Radio / Audio** and restart Monitor.
+
 - **All Messages** shows decoded signals across the waterfall range, with frequency and estimated SNR.
 - **Conversation** follows the selected receive offset and tolerance. It can open in a dedicated window.
 - Type in **Message** and use Enter or **Send message** to transmit. F1–F8 invoke editable macros. **Halt Tx** stops transmission.

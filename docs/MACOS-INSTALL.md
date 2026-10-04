@@ -10,6 +10,8 @@ brew install gcc fftw hamlib qt@5 boost libusb
 
 The binaries currently reference Homebrew libraries under `/opt/homebrew`; compatible installed library versions are required. Drag Aurora JTTY.app to Applications, or run it from a writable local folder. macOS may require approval to open this unsigned developer application. Microphone permission is required for USB radio audio input as well as microphones.
 
+**Yaesu FT-710 on macOS:** In **Audio MIDI Setup**, select the radio’s **USB Audio Device** and set **Format to 44,100 Hz for both input and output**, instead of 48,000 Hz. This setting is required for the FT-710 to work with Aurora JTTY on macOS. Stop monitoring before changing the format, then reselect the USB input/output in **Radio / Audio** and restart Monitor.
+
 Select your radio, CAT port, USB input and USB output in Radio / Audio. The existing JTTY Workbench settings and save/log folders are retained. The DMG does not change radio settings or transmit automatically.
 
 See THIRD_PARTY_NOTICES.md, COPYING and PUBLICATION-REQUIREMENTS.md for software copyright, dependency obligations and release requirements. The corresponding source archive contains the pinned upstream source, Aurora modifications and build scripts; build instructions are in its README.md. External dependencies remain separately installed and their binaries are not bundled.

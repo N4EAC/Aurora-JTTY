@@ -9,6 +9,8 @@
 
 For the FT-710, choose **Yaesu FT-710**, its CAT USB serial port, and serial parameters matching the radio. Select its **USB Audio Device** for input/output. USB serial port identifiers differ between computers. Use your radio's USB modulation and output-level controls to set audio levels; avoid clipping and excessive ALC.
 
+**Yaesu FT-710 on macOS:** In **Audio MIDI Setup**, select the radio’s **USB Audio Device** and set **Format to 44,100 Hz for both input and output**, instead of 48,000 Hz. This setting is required for the FT-710 to work with Aurora JTTY on macOS. Stop monitoring before changing the format, then reselect the USB input/output in **Radio / Audio** and restart Monitor.
+
 If USB input is unavailable, stop monitoring, reconnect the device, reopen Audio settings and select it again. Check macOS microphone permission and the device format in Audio MIDI Setup. CAT and audio are separate USB functions. Close other applications using the CAT port while configuring this app.
 
 ## Files and diagnostics
