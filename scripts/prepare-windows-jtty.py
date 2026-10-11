@@ -21,7 +21,10 @@ import shutil
 shutil.copy2(pathlib.Path(__file__).resolve().parent.parent / 'native/Assets/Aurora-JTTY.ico', source / 'icons/windows-icons/wsjtx.ico')
 
 # Windows Explorer shows Aurora's release version, while source provenance remains in About.
-edit('CMake/Modules/generate_version_info.cmake', '# Force resource files into the top-level build directory', 'if (WIN32 AND PRODUCT_NAME STREQUAL "wsjtx")\n  set(PRODUCT_VERSION_MAJOR 1)\n  set(PRODUCT_VERSION_MINOR 1)\n  set(PRODUCT_VERSION_PATCH 0)\n  set(PRODUCT_VERSION_TWEAK 0)\n  set(PRODUCT_VERSION_REVISION "")\n  set(PRODUCT_FILE_DESCRIPTION "Aurora JTTY")\n  set(PRODUCT_ORIGINAL_FILENAME "Aurora-JTTY.exe")\nendif ()\n# Force resource files into the top-level build directory')
+edit('CMake/Modules/generate_version_info.cmake', '# Force resource files into the top-level build directory', 'if (WIN32 AND PRODUCT_NAME STREQUAL "wsjtx")\n  set(PRODUCT_VERSION_MAJOR 1)\n  set(PRODUCT_VERSION_MINOR 2)\n  set(PRODUCT_VERSION_PATCH 0)\n  set(PRODUCT_VERSION_TWEAK 0)\n  set(PRODUCT_VERSION_REVISION "")\n  set(PRODUCT_FILE_DESCRIPTION "Aurora JTTY")\n  set(PRODUCT_ORIGINAL_FILENAME "Aurora-JTTY.exe")\nendif ()\n# Force resource files into the top-level build directory')
 
 # Reparented Aurora widgets must not inherit the original Windows FT8 sizing policy.
 edit('widgets/mainwindow.cpp', 'void MainWindow::updateMainWindowControlSizes()\n{', 'void MainWindow::updateMainWindowControlSizes()\n{\n#ifdef Q_OS_WIN\n  if(findChild<QWidget *>("jttyWorkbenchRoot")) {\n    for(auto button:{ui->lookupButton,ui->addButton,ui->ignoreButton}) {\n      button->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);\n      button->setMinimumWidth(70);\n      button->setMaximumWidth(110);\n    }\n    return;\n  }\n#endif')
+
+# Windows 1.2 brings the later shared status/progress fixes into the release.
+edit('main.cpp', 'a.setApplicationVersion ("1.1");', '#ifdef Q_OS_WIN\n      a.setApplicationVersion ("1.2");\n#else\n      a.setApplicationVersion ("1.1");\n#endif')

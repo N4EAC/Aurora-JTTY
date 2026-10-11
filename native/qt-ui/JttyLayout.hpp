@@ -369,6 +369,7 @@ void MainWindow::installJttyLayout() {
   auto timer = new QTimer(root); timer->setInterval(250);
   connect(timer,&QTimer::timeout,this,update); timer->start(); update();
   setCentralWidget(root);
+#ifndef Q_OS_WIN
   auto themes=ui->menuView->addMenu(tr("Themes"));
   auto themeGroup=new QActionGroup(this);
   themeGroup->setExclusive(true);
@@ -384,6 +385,7 @@ void MainWindow::installJttyLayout() {
       applyApplicationStyle(qApp->font(),theme!=0);
     });
   }
+#endif
   applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
   auto fontMenu=ui->menuView->addMenu(tr("Message font size"));
   auto fontGroup=new QActionGroup(this);
@@ -488,7 +490,13 @@ bool MainWindow::jttyLayoutSmoke() {
   auto controls=findChild<QPushButton*>("jttyWaterfallControls");
   auto checkbox=m_wideGraph->findChild<QCheckBox*>("cbControls");
   auto controlPanel=m_wideGraph->findChild<QWidget*>("controls_widget");
-  if(!darkTheme || !lightTheme || !controls || !checkbox || !controlPanel || !checkbox->isHidden()) return false;
+  if(!controls || !checkbox || !controlPanel || !checkbox->isHidden()) return false;
+#ifdef Q_OS_WIN
+  if(darkTheme || lightTheme || findChild<QAction*>("jttyAuroraTheme")
+     || !qApp->styleSheet().contains("#262a30")
+     || QCoreApplication::instance()->property("jttyAuroraTheme").toBool()) return false;
+#else
+  if(!darkTheme || !lightTheme) return false;
   bool savedDark=m_settings->value("MainWindow/JttyDarkTheme",false).toBool();
   darkTheme->trigger();
   if(!darkTheme->isChecked() || lightTheme->isChecked() || !qApp->styleSheet().contains("#262a30")) return false;
@@ -502,6 +510,7 @@ bool MainWindow::jttyLayoutSmoke() {
   auto auroraPreview=qEnvironmentVariable("JTTY_UI_PREVIEW");
   if(!auroraPreview.isEmpty()) grab().save(auroraPreview+".aurora.png");
   (savedDark ? darkTheme : lightTheme)->trigger();
+#endif
   bool savedControls=controls->isChecked();
   controls->setChecked(true);
   if(!checkbox->isChecked() || controlPanel->isHidden()) return false;

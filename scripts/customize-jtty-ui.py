@@ -128,7 +128,7 @@ dark_css = (root/'native/qt-ui/dark.qss').read_text()
 aurora_css = (root/'native/qt-ui/aurora.qss').read_text()
 edit('qt_helpers.cpp', '  return style_sheet + "* {" + font_as_stylesheet (font) + \'}\';',
      '  return "* {" + font_as_stylesheet (font) + \'}\' + (QCoreApplication::instance()->property("jttyAuroraTheme").toBool() ? QString::fromUtf8(R"JTTYAURORA('+aurora_css+')JTTYAURORA") : dark_style ? QString::fromUtf8(R"JTTYDARK('+dark_css+')JTTYDARK") : QString::fromUtf8(R"JTTYGRAY('+css+')JTTYGRAY"));')
-edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{\n  dark = m_settings->value("MainWindow/JttyDarkTheme",false).toBool();\n  QCoreApplication::instance()->setProperty("jttyAuroraTheme",m_settings->value("MainWindow/JttyAuroraTheme",false).toBool());')
+edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{\n#ifdef Q_OS_WIN\n  dark = true;\n  QCoreApplication::instance()->setProperty("jttyAuroraTheme",false);\n#else\n  dark = m_settings->value("MainWindow/JttyDarkTheme",false).toBool();\n  QCoreApplication::instance()->setProperty("jttyAuroraTheme",m_settings->value("MainWindow/JttyAuroraTheme",false).toBool());\n#endif')
 
 edit('widgets/About.cpp', 'WSJT-X™ v', 'JTTY Workbench v')
 edit('widgets/About.cpp', 'WSJT-X™ implements a number of digital modes designed for <br />"\n    "weak-signal Amateur Radio communication.', 'JTTY Workbench provides keyboard-to-keyboard JTTY communication.<br />"\n    "Based on the open-source WSJT-X project.')
