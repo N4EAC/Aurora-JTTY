@@ -1,7 +1,7 @@
 
 <img width="1609" height="977" alt="Bunker Ham Shack Digital Signals" src="https://github.com/user-attachments/assets/b6552f1a-39cc-4efb-bdbc-f7f3177ce1ff" />
 
-# Aurora JTTY 1.1
+# Aurora JTTY
 
 ![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20Apple%20Silicon-blue)
 ![Platform: Windows x64](https://img.shields.io/badge/platform-Windows%20x64-blue)
@@ -14,11 +14,11 @@ Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-
 
 The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
 
-[Experimental Windows x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.2-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.2-windows-preview/Aurora-JTTY-1.2-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
+[Experimental Windows 1.2 x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.2-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.2-windows-preview/Aurora-JTTY-1.2-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
 
 **The Windows version is experimental.** It includes its runtime dependencies and is unsigned. Native Windows startup and installation are checked automatically; radio USB audio and CAT/PTT require testing with your station. Complete application and dependency source packages accompany the release.
 
-Version 1.1 fixes transmitted-message text contrast: black text on the yellow highlight remains readable across themes.
+Version 1.1 fixes transmitted-message text contrast: black text on the yellow highlight remains readable across themes. Windows 1.2 also includes the later Tx/Last Tx status and JTTY audio-progress fixes, with a brief full-bar completion indication and Dark as its only theme.
 
 ## Using Aurora JTTY
 
