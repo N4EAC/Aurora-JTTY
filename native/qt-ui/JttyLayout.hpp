@@ -575,6 +575,12 @@ bool MainWindow::jttyLayoutSmoke() {
   auto greenPreview=qEnvironmentVariable("JTTY_UI_PREVIEW");
   if(!greenPreview.isEmpty()) grab().save(greenPreview+".greenscreen.png");
   (savedGreen ? greenTheme : defaultTheme)->trigger();
+  auto messageStyles=findChild<QComboBox*>("jttyMessageStyle");
+  if(!messageStyles || messageStyles->count()!=3) return false;
+  int savedStyle=messageStyles->currentIndex();
+  messageStyles->setCurrentIndex(2);
+  if(ui->pbSendMessage->text()!=tr("Go") || !ui->Tx_Message->placeholderText().contains("Go")) return false;
+  messageStyles->setCurrentIndex(savedStyle);
   auto beaconEnable=findChild<QCheckBox*>("jttyBeaconEnable");
   auto interval=findChild<QComboBox*>("jttyBeaconInterval");
   if(!JttyBeacon::smoke() || !beaconEnable || beaconEnable->isChecked() || !interval || interval->count()!=12) return false;

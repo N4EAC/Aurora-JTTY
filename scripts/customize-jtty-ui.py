@@ -108,7 +108,7 @@ cleanup += '''
   ui->actionUse_Dark_Style->setChecked(false);
   ui->actionUse_Dark_Style->setVisible(false);
   setDecodeTitles(tr("Received messages"), tr("Conversation"));
-  ui->Tx_Message->setPlaceholderText(tr("Type a JTTY message — Enter to send"));
+  ui->Tx_Message->setPlaceholderText(property("jttyMessageStyle").toInt()>0 ? tr("Compose a message, then press Go") : tr("Type a JTTY message — Enter to send"));
   setWindowTitle("JTTY Workbench");
 '''
 edit('widgets/mainwindow.cpp', '  monitor(true);\n}\n\n\nvoid MainWindow::on_actionMSK144_triggered()', '  monitor(true);\n'+cleanup+'}\n\n\nvoid MainWindow::on_actionMSK144_triggered()')
