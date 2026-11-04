@@ -45,7 +45,14 @@ jobs:
       - name: Install pinned libusb package
         # This signed package remains on the official mirror but is no longer
         # listed in the rolling MINGW64 repository database.
-        run: pacman --noconfirm -U https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-libusb-1.0.30-1-any.pkg.tar.zst
+        run: |
+          mkdir -p build/pinned-packages
+          package=mingw-w64-x86_64-libusb-1.0.30-1-any.pkg.tar.zst
+          base=https://mirror.msys2.org/mingw/mingw64
+          curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 --output "build/pinned-packages/$package" "$base/$package"
+          curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 --output "build/pinned-packages/$package.sig" "$base/$package.sig"
+          pacman-key --verify "build/pinned-packages/$package.sig" "build/pinned-packages/$package"
+          pacman --noconfirm -U "build/pinned-packages/$package"
       - name: Cache Hamlib build
         id: hamlib-cache
         uses: actions/cache/restore@v4
