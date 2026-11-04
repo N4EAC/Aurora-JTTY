@@ -38,3 +38,5 @@ The workflow verifies both the portable executable and the installed executable 
 The Windows workflow pins the official signed MINGW64 libusb 1.0.30 package because it is no longer listed in the rolling repository database. Its matching source package is still collected with the other dependency sources.
 
 The maintained Hamlib Windows build script supplies the standard assertion header to Hamlib 4.7.2 when compiling with current MinGW GCC. It otherwise retains the upstream configure options and source checkout.
+
+macOS builds use immutable staging directories and record the latest path in `build/macos-package-path.txt`. The build signs/verifies the complete bundle after adding resources. Do not overwrite a running app: changing its on-disk identity during an audio session can invalidate privacy authorization. Ad hoc build identities still change between rebuilds; persistent trust across releases requires an appropriate signing identity.

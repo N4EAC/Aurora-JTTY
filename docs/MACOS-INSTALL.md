@@ -19,3 +19,5 @@ See THIRD_PARTY_NOTICES.md, COPYING and PUBLICATION-REQUIREMENTS.md for software
 The source snapshot omits unrelated mode sample recordings, QDarkStyle demonstration screenshots and unused upstream Windows binaries; build source and JTTY samples are retained. The full unchanged upstream checkout remains available at the pinned commit identified in README.md.
 
 Version 1.3 uses monospace fonts and offers Default and Greenscreen in View → Themes. The optional beacon transmits CALL BEACON GRID at 5–60 minute intervals (5-minute steps). It starts disabled each launch; see the README for setup and operating behavior.
+
+Development builds are staged in separate directories rather than replacing a running app bundle. The whole bundle is ad hoc signed and verified, but is not Developer ID signed or notarized. macOS may ask for microphone permission once again after a changed development build; repeated requests during one unchanged running build are not expected. Quit the old app before opening a new build or replacing the installed copy.

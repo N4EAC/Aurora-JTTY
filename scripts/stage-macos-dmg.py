@@ -9,7 +9,13 @@ stage = root / "build/dmg-stage"
 if stage.exists():
     shutil.rmtree(stage)
 stage.mkdir(parents=True)
-shutil.copytree(root / "build/Aurora JTTY.app", stage / "Aurora JTTY.app")
+pointer = root / "build/macos-package-path.txt"
+if not pointer.is_file():
+    raise SystemExit("Build the macOS app first (scripts/build-wsjtx-jtty.sh).")
+app = Path(pointer.read_text().strip())
+subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True)
+shutil.copytree(app, stage / "Aurora JTTY.app")
+subprocess.run(["codesign", "--verify", "--deep", "--strict", str(stage / "Aurora JTTY.app")], check=True)
 (stage / "Applications").symlink_to("/Applications")
 for name in ("COPYING", "THIRD_PARTY_NOTICES.md", "docs/PUBLICATION-REQUIREMENTS.md", "docs/MACOS-INSTALL.md", "upstream/wsjtx/TRADEMARK.md", "upstream/wsjtx/DOCS-LICENSE.md"):
     shutil.copy2(root / name, stage / Path(name).name)

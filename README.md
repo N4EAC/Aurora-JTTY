@@ -48,7 +48,7 @@ cd Aurora-JTTY
 brew install gcc fftw cmake hamlib qt@5 boost libusb portaudio
 sh scripts/build-wsjtx-jtty.sh
 sh scripts/test-wsjtx-jtty.sh
-open "build/Aurora JTTY.app"
+open "$(cat build/macos-package-path.txt)"
 ```
 
 For an existing clone, run `git submodule update --init --recursive`. The upstream checkout is pinned at `567ad29ce6abf3d4a44f181cdbc7ceba0d73e5f4` (`v3.2.0-rc1`). GitHub's automatically generated source archives omit submodule contents; use the complete source archive attached to the release or clone with submodules.

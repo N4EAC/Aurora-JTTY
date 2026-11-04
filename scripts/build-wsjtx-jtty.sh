@@ -11,12 +11,18 @@ cmake -S "$TASK_ROOT/build/wsjtx-jtty-source" -B "$TASK_ROOT/build/wsjtx-jtty-fo
   -DWSJT_BUILD_UTILS=ON -DWSJT_ENABLE_TESTS=ON -DWSJT_ENABLE_GUI_SMOKE_TESTS=ON \
   -DWSJT_FOX_OTP=ON -DWSJT_TRACE_CAT=ON -DWSJT_QDEBUG_TO_FILE=ON
 cmake --build "$TASK_ROOT/build/wsjtx-jtty-fork" --target wsjtx jt9 -j 6
-# Keep both builds available; the replacement is identifiable in Finder.
-FORK_APP="$TASK_ROOT/build/Aurora JTTY.app"
-rm -rf "$FORK_APP"
+# Never replace an app bundle that an operator may currently be running.
+# Each build gets an immutable staging directory; the pointer is for packaging.
+TASK_STAGE=$(mktemp -d "$TASK_ROOT/build/macos-stage.XXXXXX")
+FORK_APP="$TASK_STAGE/Aurora JTTY.app"
 cp -R "$TASK_ROOT/build/wsjtx-jtty-fork/wsjtx.app" "$FORK_APP"
 cp "$TASK_ROOT/build/wsjtx-jtty-fork/jt9" "$FORK_APP/Contents/MacOS/jt9"
 cp "$TASK_ROOT/COPYING" "$FORK_APP/Contents/Resources/COPYING"
 cp "$TASK_ROOT/THIRD_PARTY_NOTICES.md" "$FORK_APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
-touch "$FORK_APP"
+# Bind Info.plist and resources, not merely the linker's bare executable signature.
+# Ad hoc signing is for local/developer builds, not Developer ID/notarization.
+codesign --force --sign - --identifier com.n4eac.jtty.wsjtx.jt9 "$FORK_APP/Contents/MacOS/jt9"
+codesign --force --sign - --identifier com.n4eac.jtty.wsjtx "$FORK_APP"
+codesign --verify --deep --strict "$FORK_APP"
+printf '%s\n' "$FORK_APP" > "$TASK_ROOT/build/macos-package-path.txt"
 printf '%s\n' "$FORK_APP"
