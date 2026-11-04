@@ -51,8 +51,10 @@ jobs:
           base=https://mirror.msys2.org/mingw/mingw64
           curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 --output "build/pinned-packages/$package" "$base/$package"
           curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 --output "build/pinned-packages/$package.sig" "$base/$package.sig"
-          pacman-key --verify "build/pinned-packages/$package.sig" "build/pinned-packages/$package"
-          pacman --noconfirm -U "build/pinned-packages/$package"
+          # Require the downloaded detached signature through Pacman's normal
+          # keyring handling (the pacman-key wrapper has different UID checks).
+          awk '/^\[options\]/ {print; print "LocalFileSigLevel = Required"; next} /^[[:space:]#]*LocalFileSigLevel[[:space:]]*=/ {next} {print}' /etc/pacman.conf > build/pinned-packages/pacman.conf
+          pacman --config build/pinned-packages/pacman.conf --noconfirm -U "build/pinned-packages/$package"
       - name: Cache Hamlib build
         id: hamlib-cache
         uses: actions/cache/restore@v4
