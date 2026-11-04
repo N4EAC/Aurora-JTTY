@@ -36,7 +36,7 @@ Configure your callsign, grid, radio, CAT serial port and USB audio input/output
 
 Set your callsign and grid in **Radio / Audio**, connect CAT and select USB audio, then start **Monitor**. Select a beacon interval from **5 to 60 minutes in 5-minute increments** and check **Enable beacon**. It transmits `CALL BEACON GRID` using your configured identity and the current dial/Tx offset. The first beacon waits one full interval. Changing the interval restarts the countdown.
 
-Beacon starts disabled on every launch. Busy transmissions, Tune, disconnected CAT, unavailable output audio, and stopped/error input monitoring cause an interval to be skipped; skipped beacons are not queued. **Halt Tx** also disables future beacons. Unchecking Enable beacon stops future scheduled sends; Halt Tx stops an active transmission. Keep automatic transmissions enabled only when appropriate for your station and frequency.
+Beacon starts disabled on every launch. Busy transmissions, Tune, disconnected CAT, unavailable output audio, and stopped/error input monitoring cause an interval to be skipped; skipped beacons are not queued. **Halt Tx**, **Stop**, or **Escape** also disable future beacons. Unchecking Enable beacon stops future scheduled sends; Halt Tx stops an active transmission. Keep automatic transmissions enabled only when appropriate for your station and frequency.
 
 ## Build from source
 

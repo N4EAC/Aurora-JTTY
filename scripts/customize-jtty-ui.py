@@ -345,3 +345,6 @@ edit('widgets/mainwindow.cpp', 'showStatusMessage (tr ("Scanned ADIF log, %1 wor
 edit('widgets/mainwindow.cpp', 'void MainWindow::setDecodedTextFont (QFont const& font)\n{', 'void MainWindow::setDecodedTextFont (QFont const& requestedFont)\n{\n  QFont font=requestedFont;\n  font.setFamily(jttyMonospaceFamily());\n  font.setPointSize(jttyMessagePoints(m_settings));\n  ui->Tx_Message->setStyleSheet(QString("font-size: %1pt;").arg(font.pointSize()));')
 edit('widgets/mainwindow.cpp', 'ui->lh_decodes_headings_label->setStyleSheet (ui->lh_decodes_headings_label->styleSheet () + style_sheet);', 'ui->lh_decodes_headings_label->setStyleSheet (style_sheet);')
 edit('widgets/mainwindow.cpp', 'ui->rh_decodes_headings_label->setStyleSheet (ui->rh_decodes_headings_label->styleSheet () + style_sheet);', 'ui->rh_decodes_headings_label->setStyleSheet (style_sheet);')
+
+# Keyboard Escape and every abort route also cancel future beacon intervals.
+edit('widgets/mainwindow_jtty.cpp', 'void MainWindow::abort_jtty_tx()\n{', 'void MainWindow::abort_jtty_tx()\n{\n  if(auto beacon=findChild<QCheckBox*>("jttyBeaconEnable")) beacon->setChecked(false);')

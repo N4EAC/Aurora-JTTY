@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QSplitter>
+#include <QScrollArea>
 #include <QTimer>
 #include <QPushButton>
 #include <QSpinBox>
@@ -28,6 +29,17 @@
 #include "JttyPreferences.hpp"
 #include <QTemporaryDir>
 #include <QFontInfo>
+
+inline void jttySizeControls(QWidget *root) {
+  // Reparented Windows controls can retain the old mode's Ignored policies.
+  for(auto widget : root->findChildren<QWidget*>()) {
+    if(qobject_cast<QAbstractButton*>(widget) || qobject_cast<QLineEdit*>(widget)
+       || qobject_cast<QComboBox*>(widget) || qobject_cast<QAbstractSpinBox*>(widget)) {
+      widget->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Fixed);
+      widget->setMinimumHeight(qMax(28,widget->sizeHint().height()));
+    }
+  }
+}
 
 class JttyConversationWindow final : public QDialog {
 public:
@@ -301,6 +313,7 @@ void MainWindow::installJttyLayout() {
   QPushButton *buttons[] = {ui->pbF1,ui->pbF2,ui->pbF3,ui->pbF4,ui->pbF5,ui->pbF6,ui->pbF7,ui->pbF8};
   QLineEdit *templates[] = {ui->msg1,ui->msg2,ui->msg3,ui->msg4,ui->msg5,ui->msg6,ui->msg7,ui->msg8};
   for(int i=0;i<8;++i) {
+    macros->setColumnStretch(i,1);
     for(auto widget : {static_cast<QWidget*>(buttons[i]),static_cast<QWidget*>(templates[i])}) {
       widget->setMinimumSize(0,0); widget->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX); widget->show();
     }
@@ -455,7 +468,12 @@ void MainWindow::installJttyLayout() {
     if(line->frameShape()==QFrame::HLine || line->frameShape()==QFrame::VLine) line->hide();
   for(auto item : statusBar()->findChildren<QLabel*>()) item->setFrameShape(QFrame::NoFrame);
   mode_label.hide(); // The application has a single operating mode.
-  setCentralWidget(root);
+  root->layout()->setSizeConstraint(QLayout::SetMinimumSize);
+  auto workspace=new QScrollArea(this);
+  workspace->setObjectName("jttyWorkspaceScroll");
+  workspace->setFrameShape(QFrame::NoFrame);
+  workspace->setWidgetResizable(true); workspace->setWidget(root);
+  setCentralWidget(workspace);
   QFont mono(jttyMonospaceFamily());
   QFont decoded=ui->decodedTextBrowser->contentFont(); decoded.setFamily(mono.family()); decoded.setStyleHint(QFont::TypeWriter); decoded.setPointSize(jttyMessagePoints(m_settings));
   ui->decodedTextBrowser->setContentFont(decoded); ui->decodedTextBrowser2->setContentFont(decoded);
@@ -474,6 +492,8 @@ void MainWindow::installJttyLayout() {
     });
   }
   applyApplicationStyle(qApp->font(),true);
+  settings->setMinimumWidth(140);
+  jttySizeControls(root);
   auto fontMenu=ui->menuView->addMenu(tr("Message font size"));
   auto fontGroup=new QActionGroup(this);
   fontGroup->setObjectName("jttyFontSizes"); fontGroup->setExclusive(true);
@@ -486,10 +506,8 @@ void MainWindow::installJttyLayout() {
     connect(action,&QAction::triggered,this,[this,size] {
       jttySetPreference(m_settings,"JttyMessageFontSize",size);
       QFont font=ui->decodedTextBrowser->contentFont();font.setPointSize(size);
-      ui->decodedTextBrowser->setContentFont(font);
-      ui->decodedTextBrowser2->setContentFont(font);
-      ui->Tx_Message->setFont(font);
-      ui->Tx_Message->setStyleSheet(QString("font-size: %1pt;").arg(size));
+      setDecodedTextFont(font);
+      if(auto root=findChild<QWidget*>("jttyWorkbenchRoot")) jttySizeControls(root);
     });
   }
   setMinimumSize(1080,720);
@@ -570,6 +588,8 @@ bool MainWindow::jttyLayoutSmoke() {
   if(ui->decodedTextBrowser->contentFont().pointSize()!=jttyMessagePoints(m_settings)
      || ui->decodedTextBrowser2->contentFont().pointSize()!=jttyMessagePoints(m_settings)
      || ui->Tx_Message->font().pointSize()!=jttyMessagePoints(m_settings)) return false;
+  for(auto button : {ui->pbF1,ui->pbF2,ui->pbF3,ui->pbF4,ui->pbF5,ui->pbF6,ui->pbF7,ui->pbF8})
+    if(button->height()<24) return false;
   auto savedSize=fontGroup->checkedAction();
   auto savedText=ui->decodedTextBrowser->toPlainText();
   auto originalUiFont=qApp->font();

@@ -49,3 +49,9 @@ QCheckBox::indicator:checked { background: #689ec7; }
 
 QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label { background: transparent; border: none; }
 QStatusBar::item, QStatusBar QLabel { border: none; }
+
+QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
+QScrollBar:horizontal { background: transparent; height: 10px; margin: 0; }
+QScrollBar::handle { background: #657180; border: none; border-radius: 3px; min-height: 20px; min-width: 20px; }
+QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; border: none; background: transparent; }
+QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
