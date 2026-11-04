@@ -12,7 +12,7 @@ Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-
 
 [macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.3) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.3/Aurora-JTTY-1.3-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
 
-The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
+The macOS release is an ad hoc signed Apple Silicon developer build requiring compatible Homebrew libraries; it is not Developer ID signed. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
 
 [Experimental Windows 1.3 x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.3) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.3/Aurora-JTTY-1.3-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
 
