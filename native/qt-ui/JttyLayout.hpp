@@ -454,6 +454,7 @@ void MainWindow::installJttyLayout() {
   for(auto line : root->findChildren<QFrame*>())
     if(line->frameShape()==QFrame::HLine || line->frameShape()==QFrame::VLine) line->hide();
   for(auto item : statusBar()->findChildren<QLabel*>()) item->setFrameShape(QFrame::NoFrame);
+  mode_label.hide(); // The application has a single operating mode.
   setCentralWidget(root);
   QFont mono(jttyMonospaceFamily());
   QFont decoded=ui->decodedTextBrowser->contentFont(); decoded.setFamily(mono.family()); decoded.setStyleHint(QFont::TypeWriter); decoded.setPointSize(jttyMessagePoints(m_settings));

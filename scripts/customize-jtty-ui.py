@@ -340,3 +340,8 @@ edit('widgets/mainwindow_slots.cpp', 'void MainWindow::on_Tx_Message_returnPress
 
 # Keep diagnostic log-load details out of the operator status bar.
 edit('widgets/mainwindow.cpp', 'showStatusMessage (tr ("Scanned ADIF log, %1 worked-before records created. CTY: %2").arg (record_count).arg (cty_version));', 'LOG_INFO("Station log loaded: records=" << record_count << " CTY=" << cty_version.toStdString());')
+
+# The deferred upstream initialize_fonts callback must honor Aurora's saved size.
+edit('widgets/mainwindow.cpp', 'void MainWindow::setDecodedTextFont (QFont const& font)\n{', 'void MainWindow::setDecodedTextFont (QFont const& requestedFont)\n{\n  QFont font=requestedFont;\n  font.setFamily(jttyMonospaceFamily());\n  font.setPointSize(jttyMessagePoints(m_settings));\n  ui->Tx_Message->setStyleSheet(QString("font-size: %1pt;").arg(font.pointSize()));')
+edit('widgets/mainwindow.cpp', 'ui->lh_decodes_headings_label->setStyleSheet (ui->lh_decodes_headings_label->styleSheet () + style_sheet);', 'ui->lh_decodes_headings_label->setStyleSheet (style_sheet);')
+edit('widgets/mainwindow.cpp', 'ui->rh_decodes_headings_label->setStyleSheet (ui->rh_decodes_headings_label->styleSheet () + style_sheet);', 'ui->rh_decodes_headings_label->setStyleSheet (style_sheet);')
