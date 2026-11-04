@@ -112,7 +112,7 @@ cleanup += '''
   setWindowTitle("JTTY Workbench");
 '''
 edit('widgets/mainwindow.cpp', '  monitor(true);\n}\n\n\nvoid MainWindow::on_actionMSK144_triggered()', '  monitor(true);\n'+cleanup+'}\n\n\nvoid MainWindow::on_actionMSK144_triggered()')
-# Make saved dark-mode preferences consistent with the neutral gray theme.
+# Disable the inherited theme toggle; Aurora owns its two theme actions.
 edit('widgets/mainwindow_settings.cpp', 'ui->actionUse_Dark_Style->setChecked(', 'ui->actionUse_Dark_Style->setChecked(false && ')
 
 # Keep settings indices stable: hide tabs rather than removing their objects.
@@ -122,14 +122,13 @@ config_cleanup += '\n  ui_->configuration_tabs->setTabVisible(ui_->configuration
 config_cleanup += '\n  ui_->configuration_tabs->setTabVisible(ui_->configuration_tabs->indexOf(ui_->filters_tab), false);'
 edit('Configuration.cpp', '  return QDialog::exec();', config_cleanup+'\n  return QDialog::exec();')
 
-# Gray theme follows fonts across all settings changes and auxiliary windows.
-css = (root/'native/qt-ui/gray.qss').read_text()
-dark_css = (root/'native/qt-ui/dark.qss').read_text()
-aurora_css = (root/'native/qt-ui/greenscreen.qss').read_text()
+# Shared Default/Greenscreen styling for all settings and auxiliary windows.
+default_css = (root/'native/qt-ui/dark.qss').read_text()
+green_css = (root/'native/qt-ui/greenscreen.qss').read_text()
 edit('qt_helpers.cpp', '  return style_sheet + "* {" + font_as_stylesheet (font) + \'}\';',
-     '  return "* {" + font_as_stylesheet (font) + \'}\' + (QCoreApplication::instance()->property("jttyGreenscreenTheme").toBool() ? QString::fromUtf8(R"JTTYAURORA('+aurora_css+')JTTYAURORA") : dark_style ? QString::fromUtf8(R"JTTYDARK('+dark_css+')JTTYDARK") : QString::fromUtf8(R"JTTYGRAY('+css+')JTTYGRAY"));')
-edit('widgets/mainwindow.cpp', '#include "mainwindow.h"', '#include "mainwindow.h"\n#include "JttyFonts.hpp"')
-edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& requestedFont, bool dark)\n{\n  QFont font=requestedFont;\n  font.setFamily(jttyMonospaceFamily());\n  font.setStyleHint(QFont::TypeWriter);\n  dark = true;\n  QCoreApplication::instance()->setProperty("jttyGreenscreenTheme",m_settings->value("MainWindow/JttyGreenscreenTheme",false).toBool());')
+     '  return "* {" + font_as_stylesheet (font) + \'}\' + (QCoreApplication::instance()->property("jttyGreenscreenTheme").toBool() ? QString::fromUtf8(R"JTTYGREEN('+green_css+')JTTYGREEN") : QString::fromUtf8(R"JTTYDEFAULT('+default_css+')JTTYDEFAULT"));')
+edit('widgets/mainwindow.cpp', '#include "mainwindow.h"', '#include "mainwindow.h"\n#include "JttyFonts.hpp"\n#include "JttyPreferences.hpp"')
+edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& requestedFont, bool dark)\n{\n  QFont font=requestedFont;\n  font.setFamily(jttyMonospaceFamily());\n  font.setStyleHint(QFont::TypeWriter);\n  dark = true;\n  QCoreApplication::instance()->setProperty("jttyGreenscreenTheme",jttyPreference(m_settings,"JttyGreenscreenTheme",false).toBool());')
 
 
 edit('widgets/About.cpp', 'WSJT-X™ v', 'JTTY Workbench v')
@@ -183,6 +182,7 @@ p.write_text(text)
 shutil.copy2(root/'native/qt-ui/JttyLayout.hpp',source/'widgets/JttyLayout.hpp')
 shutil.copy2(root/'native/qt-ui/JttyBeacon.hpp',source/'widgets/JttyBeacon.hpp')
 shutil.copy2(root/'native/qt-ui/JttyFonts.hpp',source/'widgets/JttyFonts.hpp')
+shutil.copy2(root/'native/qt-ui/JttyPreferences.hpp',source/'widgets/JttyPreferences.hpp')
 edit('widgets/plotter.cpp', 'QFont Font("Arial");', 'QFont Font(jttyMonospaceFamily());')
 p=source/'widgets/plotter.cpp';p.write_text('#include "JttyFonts.hpp"\n'+p.read_text())
 edit('widgets/mainwindow.h', '  QString jttyOperatingMode() const { return m_mode; }', '  void installJttyLayout();\n  bool jttyLayoutSmoke();\n  QString jttyOperatingMode() const { return m_mode; }')
@@ -337,3 +337,6 @@ edit('widgets/mainwindow_jtty.cpp', '  if(compiled.status == Jtty::NativeMacroSt
   }
   if(compiled.status == Jtty::NativeMacroStatus::LiteralFallback) {''')
 edit('widgets/mainwindow_slots.cpp', 'void MainWindow::on_Tx_Message_returnPressed()\n{', 'void MainWindow::on_Tx_Message_returnPressed()\n{\n  if(property("jttyMessageStyle").toInt()>0) { ui->pbSendMessage->setFocus(); return; }')
+
+# Keep diagnostic log-load details out of the operator status bar.
+edit('widgets/mainwindow.cpp', 'showStatusMessage (tr ("Scanned ADIF log, %1 worked-before records created. CTY: %2").arg (record_count).arg (cty_version));', 'LOG_INFO("Station log loaded: records=" << record_count << " CTY=" << cty_version.toStdString());')

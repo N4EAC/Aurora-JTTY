@@ -30,7 +30,7 @@ Configure your callsign, grid, radio, CAT serial port and USB audio input/output
 - **Conversation** follows the selected receive offset and tolerance. It can open in a dedicated window.
 - **Message style → Type ahead** inserts an expanded F1–F8 macro at the cursor so you can keep typing, then press **Go**. Default F5 is `%H DE %M` (Their call DE My call); existing custom F5 templates are preserved. **Buffered** replaces the draft with the macro instead. Enter only focuses Go in these modes; it does not submit the draft. **Direct** retains immediate function-key transmission and Enter-to-send. **Halt Tx** stops transmission.
 - The waterfall selects the receive offset. Use **Copy Rx → Tx** or **Copy Tx → Rx** to match offsets.
-- **View → Themes** selects Default or Greenscreen on either platform. The interface uses monospace fonts. **Message font size** sets message text to 8–17 pt.
+- **View → Themes** selects Default or Greenscreen on either platform. The interface uses monospace fonts. **Message font size** sets message text to 8–17 pt (14 pt by default) and remembers your selection.
 
 ## Beacon
 

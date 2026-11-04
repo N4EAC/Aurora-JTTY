@@ -25,6 +25,8 @@
 #include <QFontDatabase>
 #include "JttyBeacon.hpp"
 #include "JttyFonts.hpp"
+#include "JttyPreferences.hpp"
+#include <QTemporaryDir>
 #include <QFontInfo>
 
 class JttyConversationWindow final : public QDialog {
@@ -63,6 +65,7 @@ void MainWindow::installJttyLayout() {
   auto panel = [](QWidget *parent, const char *name) {
     auto frame = new QFrame(parent);
     frame->setObjectName(name);
+    frame->setFrameShape(QFrame::NoFrame);
     frame->setProperty("jttyPanel", true);
     return frame;
   };
@@ -204,8 +207,12 @@ void MainWindow::installJttyLayout() {
 
   auto vertical = new QSplitter(Qt::Vertical, root);
   vertical->setObjectName("jttyVerticalSplitter");
+  vertical->setHandleWidth(8);
+  vertical->setFrameShape(QFrame::NoFrame);
   auto messages = new QSplitter(Qt::Horizontal, vertical);
   messages->setObjectName("jttyMessagesSplitter");
+  messages->setHandleWidth(8);
+  messages->setFrameShape(QFrame::NoFrame);
   auto received = panel(messages, "jttyReceivedPanel");
   received->setMinimumWidth(295);
   auto receivedLayout = new QVBoxLayout(received);
@@ -225,7 +232,6 @@ void MainWindow::installJttyLayout() {
     ui->decodedTextBrowser->erase();
   });
   receivedLayout->addLayout(receivedHeader);
-  receivedLayout->addWidget(label(tr("All Messages"), received));
   mount(receivedLayout, ui->lh_decodes_headings_label);
   mount(receivedLayout, ui->decodedTextBrowser);
   receivedLayout->setStretch(receivedLayout->count()-1, 1);
@@ -364,7 +370,7 @@ void MainWindow::installJttyLayout() {
   auto waterfallLayout = new QVBoxLayout(waterfall);
   waterfallLayout->setContentsMargins(12,8,12,8);
   auto waterfallHeader = new QHBoxLayout;
-  waterfallHeader->addWidget(label(tr("Waterfall — click a signal to set Rx"),waterfall,true));
+  waterfallHeader->addWidget(label(tr("Waterfall"),waterfall,true));
   waterfallHeader->addStretch();
   auto displayControls = new QPushButton(tr("Display controls"),waterfall);
   displayControls->setObjectName("jttyWaterfallControls");
@@ -439,26 +445,30 @@ void MainWindow::installJttyLayout() {
     cat->setText(QStringLiteral("<span style='color:%1'>●</span> %2")
       .arg(connected ? "#27b85c" : "#89929d",
            m_config.rig_name()=="None" ? tr("Radio not selected") : (connected ? tr("CAT connected") : tr("CAT disconnected"))));
-    scope->setText(tr("Rx %1 Hz · ±%2 Hz · traffic near this frequency").arg(ui->RxFreqSpinBox_2->value()).arg(ui->sbFtol_2->value()));
+    scope->setText(tr("Rx %1 Hz · ±%2 Hz").arg(ui->RxFreqSpinBox_2->value()).arg(ui->sbFtol_2->value()));
     counter->setText(tr("%1 / 80 characters").arg(ui->Tx_Message->text().size()));
     devices->setText(tr("RX · %1   |   OUT · %2   |   %3").arg(!m_jttyInputError.isEmpty() ? tr("%1 (unavailable)").arg(m_jttyInputName.isEmpty()?tr("Input"):m_jttyInputName) : (m_config.audio_input_device().isNull() ? tr("No input selected") : m_config.audio_input_device().deviceName()),m_config.audio_output_device().isNull() ? tr("No output selected") : m_config.audio_output_device().deviceName(),!m_jttyInputError.isEmpty() ? tr("Input error · Monitor stopped") : (m_transmitting ? tr("Transmission active / queued") : (m_monitoring ? tr("Monitoring") : tr("Monitor stopped")))));
   };
   auto timer = new QTimer(root); timer->setInterval(250);
   connect(timer,&QTimer::timeout,this,update); timer->start(); update();
+  for(auto line : root->findChildren<QFrame*>())
+    if(line->frameShape()==QFrame::HLine || line->frameShape()==QFrame::VLine) line->hide();
+  for(auto item : statusBar()->findChildren<QLabel*>()) item->setFrameShape(QFrame::NoFrame);
   setCentralWidget(root);
   QFont mono(jttyMonospaceFamily());
-  QFont decoded=ui->decodedTextBrowser->contentFont(); decoded.setFamily(mono.family()); decoded.setStyleHint(QFont::TypeWriter);
+  QFont decoded=ui->decodedTextBrowser->contentFont(); decoded.setFamily(mono.family()); decoded.setStyleHint(QFont::TypeWriter); decoded.setPointSize(jttyMessagePoints(m_settings));
   ui->decodedTextBrowser->setContentFont(decoded); ui->decodedTextBrowser2->setContentFont(decoded);
   ui->Tx_Message->setFont(decoded);
+  ui->Tx_Message->setStyleSheet(QString("font-size: %1pt;").arg(decoded.pointSize()));
   auto themes=ui->menuView->addMenu(tr("Themes"));
   auto themeGroup=new QActionGroup(this); themeGroup->setExclusive(true);
-  bool green=m_settings->value("MainWindow/JttyGreenscreenTheme",false).toBool();
+  bool green=jttyPreference(m_settings,"JttyGreenscreenTheme",false).toBool();
   for(bool greenscreen : {false,true}) {
     auto action=themes->addAction(greenscreen ? tr("Greenscreen") : tr("Default"));
     action->setObjectName(greenscreen ? "jttyGreenscreenTheme" : "jttyDefaultTheme");
     action->setCheckable(true); themeGroup->addAction(action); action->setChecked(greenscreen==green);
     connect(action,&QAction::triggered,this,[this,greenscreen] {
-      m_settings->setValue("MainWindow/JttyGreenscreenTheme",greenscreen);
+      jttySetPreference(m_settings,"JttyGreenscreenTheme",greenscreen);
       applyApplicationStyle(qApp->font(),true);
     });
   }
@@ -466,14 +476,14 @@ void MainWindow::installJttyLayout() {
   auto fontMenu=ui->menuView->addMenu(tr("Message font size"));
   auto fontGroup=new QActionGroup(this);
   fontGroup->setObjectName("jttyFontSizes"); fontGroup->setExclusive(true);
-  int const selectedSize=qBound(8,m_settings->value("MainWindow/JttyMessageFontSize",m_settings->value("MainWindow/JttyFontSize",11)).toInt(),17);
+  int const selectedSize=jttyMessagePoints(m_settings);
   for(int size=8;size<=17;++size) {
     auto action=fontMenu->addAction(tr("%1 pt").arg(size));
     action->setObjectName(QString("jttyFontSize%1").arg(size));
     action->setData(size); action->setCheckable(true); fontGroup->addAction(action);
     action->setChecked(size==selectedSize);
     connect(action,&QAction::triggered,this,[this,size] {
-      m_settings->setValue("MainWindow/JttyMessageFontSize",size);
+      jttySetPreference(m_settings,"JttyMessageFontSize",size);
       QFont font=ui->decodedTextBrowser->contentFont();font.setPointSize(size);
       ui->decodedTextBrowser->setContentFont(font);
       ui->decodedTextBrowser2->setContentFont(font);
@@ -515,6 +525,16 @@ void MainWindow::jttyNoteInputError(QString const& message) {
 }
 
 bool MainWindow::jttyLayoutSmoke() {
+  QTemporaryDir fontTest;
+  if(!fontTest.isValid()) return false;
+  QSettings nested(fontTest.path()+"/preferences.ini",QSettings::IniFormat);
+  nested.beginGroup("UpstreamReader");
+  if(jttyMessagePoints(&nested)!=14) return false;
+  jttySetPreference(&nested,"JttyMessageFontSize",17);
+  if(jttyMessagePoints(&nested)!=17) return false;
+  QSettings reopened(fontTest.path()+"/preferences.ini",QSettings::IniFormat);
+  if(jttyMessagePoints(&reopened)!=17) return false;
+  nested.endGroup();
 #ifdef WSJT_ENABLE_LIVE_AUDIO_TEST
   // Actual stop-monitor route with a synthetic three-second capture, no input
   // stream or transmitter. Verify selective saving and valid WAV output.
@@ -546,6 +566,9 @@ bool MainWindow::jttyLayoutSmoke() {
   if(!ui->dxCallEntry->isClearButtonEnabled() || !ui->lineEdit->isClearButtonEnabled()) return false;
   auto fontGroup=findChild<QActionGroup*>("jttyFontSizes");
   if(!fontGroup || fontGroup->actions().size()!=10 || !fontGroup->checkedAction()) return false;
+  if(ui->decodedTextBrowser->contentFont().pointSize()!=jttyMessagePoints(m_settings)
+     || ui->decodedTextBrowser2->contentFont().pointSize()!=jttyMessagePoints(m_settings)
+     || ui->Tx_Message->font().pointSize()!=jttyMessagePoints(m_settings)) return false;
   auto savedSize=fontGroup->checkedAction();
   auto savedText=ui->decodedTextBrowser->toPlainText();
   auto originalUiFont=qApp->font();
@@ -567,7 +590,7 @@ bool MainWindow::jttyLayoutSmoke() {
   auto checkbox=m_wideGraph->findChild<QCheckBox*>("cbControls");
   auto controlPanel=m_wideGraph->findChild<QWidget*>("controls_widget");
   if(!defaultTheme || !greenTheme || !controls || !checkbox || !controlPanel || !checkbox->isHidden()) return false;
-  bool savedGreen=m_settings->value("MainWindow/JttyGreenscreenTheme",false).toBool();
+  bool savedGreen=jttyPreference(m_settings,"JttyGreenscreenTheme",false).toBool();
   defaultTheme->trigger();
   if(!defaultTheme->isChecked() || !qApp->styleSheet().contains("#262a30")) return false;
   greenTheme->trigger();

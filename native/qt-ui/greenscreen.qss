@@ -7,7 +7,7 @@ QTextEdit, QPlainTextEdit, QLineEdit, QAbstractSpinBox, QComboBox, QAbstractItem
   selection-background-color: #315b31; selection-color: #80ff80;
 }
 QTextEdit#decodedTextBrowser, QTextEdit#decodedTextBrowser2 {
-  background-color: #031003; border: 1px solid #315b31; padding: 7px;
+  background-color: #031003; border: none; padding: 7px;
 }
 QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label {
   background-color: #102810; color: #80ff80; padding: 5px; font-weight: bold;
@@ -18,17 +18,17 @@ QPushButton:hover { background-color: #315b31; }
 QPushButton:pressed { background-color: #102810; }
 QPushButton:disabled, QAbstractSpinBox:disabled { color: #315b31; }
 QLineEdit:focus, QComboBox:focus, QAbstractSpinBox:focus { border: 2px solid #315b31; }
-QGroupBox { border: 1px solid #315b31; border-radius: 5px; margin-top: 12px; padding-top: 10px; }
+QGroupBox { border: none; border-radius: 0; margin-top: 12px; padding-top: 10px; }
 QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 4px; }
 QMenuBar, QMenu { background-color: #031003; color: #80ff80; }
 QMenu::item:selected { background-color: #315b31; color: #80ff80; }
-QTabWidget::pane { border: 1px solid #315b31; }
+QTabWidget::pane { border: none; }
 QTabBar::tab { background-color: #102810; padding: 6px 10px; border: 1px solid #315b31; }
 QTabBar::tab:selected { background-color: #102810; }
 QToolTip { background-color: #102810; color: #80ff80; border: 1px solid #315b31; }
-QSplitter::handle { background-color: #315b31; }
+QSplitter::handle { background: transparent; border: none; }
 
-QFrame[jttyPanel="true"] { background-color: #102810; border: 1px solid #315b31; border-radius: 7px; }
+QFrame[jttyPanel="true"] { background-color: #102810; border: none; border-radius: 0; }
 QFrame#jttyFrequencyStrip, QFrame#jttyWaterfallPanel { background-color: #102810; }
 QFrame#jttyConversationPanel { background-color: #102810; }
 QLabel[jttyHeading="true"] { font-weight: bold; font-size: 17px; }
@@ -46,3 +46,6 @@ QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label { font-size: 17px; 
 
 QCheckBox::indicator { background: #031003; border: 1px solid #315b31; border-radius: 3px; }
 QCheckBox::indicator:checked { background: #315b31; }
+
+QLabel#lh_decodes_title_label, QLabel#rh_decodes_title_label { background: transparent; border: none; }
+QStatusBar::item, QStatusBar QLabel { border: none; }
