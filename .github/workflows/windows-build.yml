@@ -1,11 +1,19 @@
 name: Build Aurora JTTY Windows
 on:
   workflow_dispatch:
+    inputs:
+      windows_runner:
+        description: Windows runner (alternate when a pool is queued)
+        type: choice
+        default: windows-2022
+        options:
+          - windows-2022
+          - windows-2025
 permissions:
   contents: read
 jobs:
   windows:
-    runs-on: windows-2022
+    runs-on: ${{ inputs.windows_runner || 'windows-2022' }}
     timeout-minutes: 60
     env:
       PYTHONUTF8: "1"
