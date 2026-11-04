@@ -125,10 +125,12 @@ edit('Configuration.cpp', '  return QDialog::exec();', config_cleanup+'\n  retur
 # Gray theme follows fonts across all settings changes and auxiliary windows.
 css = (root/'native/qt-ui/gray.qss').read_text()
 dark_css = (root/'native/qt-ui/dark.qss').read_text()
-aurora_css = (root/'native/qt-ui/aurora.qss').read_text()
+aurora_css = (root/'native/qt-ui/greenscreen.qss').read_text()
 edit('qt_helpers.cpp', '  return style_sheet + "* {" + font_as_stylesheet (font) + \'}\';',
-     '  return "* {" + font_as_stylesheet (font) + \'}\' + (QCoreApplication::instance()->property("jttyAuroraTheme").toBool() ? QString::fromUtf8(R"JTTYAURORA('+aurora_css+')JTTYAURORA") : dark_style ? QString::fromUtf8(R"JTTYDARK('+dark_css+')JTTYDARK") : QString::fromUtf8(R"JTTYGRAY('+css+')JTTYGRAY"));')
-edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{\n#ifdef Q_OS_WIN\n  dark = true;\n  QCoreApplication::instance()->setProperty("jttyAuroraTheme",false);\n#else\n  dark = m_settings->value("MainWindow/JttyDarkTheme",false).toBool();\n  QCoreApplication::instance()->setProperty("jttyAuroraTheme",m_settings->value("MainWindow/JttyAuroraTheme",false).toBool());\n#endif')
+     '  return "* {" + font_as_stylesheet (font) + \'}\' + (QCoreApplication::instance()->property("jttyGreenscreenTheme").toBool() ? QString::fromUtf8(R"JTTYAURORA('+aurora_css+')JTTYAURORA") : dark_style ? QString::fromUtf8(R"JTTYDARK('+dark_css+')JTTYDARK") : QString::fromUtf8(R"JTTYGRAY('+css+')JTTYGRAY"));')
+edit('widgets/mainwindow.cpp', '#include "mainwindow.h"', '#include "mainwindow.h"\n#include "JttyFonts.hpp"')
+edit('widgets/mainwindow.cpp', 'void MainWindow::applyApplicationStyle (QFont const& font, bool dark)\n{', 'void MainWindow::applyApplicationStyle (QFont const& requestedFont, bool dark)\n{\n  QFont font=requestedFont;\n  font.setFamily(jttyMonospaceFamily());\n  font.setStyleHint(QFont::TypeWriter);\n  dark = true;\n  QCoreApplication::instance()->setProperty("jttyGreenscreenTheme",m_settings->value("MainWindow/JttyGreenscreenTheme",false).toBool());')
+
 
 edit('widgets/About.cpp', 'WSJT-X™ v', 'JTTY Workbench v')
 edit('widgets/About.cpp', 'WSJT-X™ implements a number of digital modes designed for <br />"\n    "weak-signal Amateur Radio communication.', 'JTTY Workbench provides keyboard-to-keyboard JTTY communication.<br />"\n    "Based on the open-source WSJT-X project.')
@@ -179,6 +181,10 @@ text = text[:start] + text[end:]
 p.write_text(text)
 
 shutil.copy2(root/'native/qt-ui/JttyLayout.hpp',source/'widgets/JttyLayout.hpp')
+shutil.copy2(root/'native/qt-ui/JttyBeacon.hpp',source/'widgets/JttyBeacon.hpp')
+shutil.copy2(root/'native/qt-ui/JttyFonts.hpp',source/'widgets/JttyFonts.hpp')
+edit('widgets/plotter.cpp', 'QFont Font("Arial");', 'QFont Font(jttyMonospaceFamily());')
+p=source/'widgets/plotter.cpp';p.write_text('#include "JttyFonts.hpp"\n'+p.read_text())
 edit('widgets/mainwindow.h', '  QString jttyOperatingMode() const { return m_mode; }', '  void installJttyLayout();\n  bool jttyLayoutSmoke();\n  QString jttyOperatingMode() const { return m_mode; }')
 edit('widgets/mainwindow.cpp', '// this must be the last statement of constructor', '  installJttyLayout();\n\n// this must be the last statement of constructor')
 p=source/'widgets/mainwindow.cpp';p.write_text(p.read_text()+'\n#include "JttyLayout.hpp"\n')

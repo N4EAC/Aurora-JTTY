@@ -13,11 +13,19 @@
 #include <QSpinBox>
 #include <QProgressBar>
 #include <functional>
+#include <memory>
 #include <QProcess>
 #include <QDir>
 #include <QDateTime>
 #include <QActionGroup>
 #include <QMenu>
+#include <QComboBox>
+#include <QElapsedTimer>
+#include <QSignalBlocker>
+#include <QFontDatabase>
+#include "JttyBeacon.hpp"
+#include "JttyFonts.hpp"
+#include <QFontInfo>
 
 class JttyConversationWindow final : public QDialog {
 public:
@@ -142,6 +150,57 @@ void MainWindow::installJttyLayout() {
     widget->setMaximumWidth(220);
   }
   outer->addWidget(top);
+  auto beaconPanel = panel(root,"jttyBeaconPanel");
+  auto beaconRow = new QHBoxLayout(beaconPanel);
+  auto beaconEnable = new QCheckBox(tr("Enable beacon"),beaconPanel);
+  beaconEnable->setObjectName("jttyBeaconEnable");
+  beaconEnable->setToolTip(tr("Automatically transmit CALL BEACON GRID at the selected interval on the current frequency. Starts disabled each launch; first beacon waits one interval. Halt Tx disables it."));
+  auto beaconInterval = new QComboBox(beaconPanel);
+  beaconInterval->setObjectName("jttyBeaconInterval");
+  for(int minutes=5;minutes<=60;minutes+=5) beaconInterval->addItem(tr("%1 min").arg(minutes),minutes);
+  int savedInterval=m_settings->value("MainWindow/JttyBeaconMinutes",5).toInt();
+  beaconInterval->setCurrentIndex(qMax(0,beaconInterval->findData(savedInterval)));
+  auto beaconStatus=label(tr("Beacon disabled"),beaconPanel);
+  beaconStatus->setObjectName("jttyBeaconStatus");
+  beaconRow->addWidget(beaconEnable); beaconRow->addWidget(beaconInterval);
+  beaconRow->addWidget(beaconStatus,1);
+  outer->addWidget(beaconPanel);
+  auto beacon=std::make_shared<JttyBeacon>();
+  auto clock=std::make_shared<QElapsedTimer>(); clock->start();
+  beacon->setInterval(beaconInterval->currentData().toInt(),0);
+  connect(beaconInterval,QOverload<int>::of(&QComboBox::currentIndexChanged),this,[this,beacon,clock,beaconInterval](int) {
+    int minutes=beaconInterval->currentData().toInt();
+    beacon->setInterval(minutes,clock->elapsed());
+    m_settings->setValue("MainWindow/JttyBeaconMinutes",minutes);
+  });
+  connect(beaconEnable,&QCheckBox::toggled,this,[this,beacon,clock,beaconEnable,beaconStatus](bool on) {
+    if(on && JttyBeacon::message(m_config.my_callsign(),m_config.my_grid()).isEmpty()) {
+      beaconEnable->setChecked(false);
+      beaconStatus->setText(tr("Set a valid callsign and grid in Radio / Audio first")); return;
+    }
+    beacon->enable(on,clock->elapsed());
+    if(!on) beaconStatus->setText(tr("Beacon disabled"));
+  });
+  for(auto stop : {ui->stopTxButton,ui->stopButton})
+    connect(stop,&QPushButton::clicked,beaconEnable,[beaconEnable]{beaconEnable->setChecked(false);});
+  auto beaconTimer=new QTimer(root); beaconTimer->setInterval(1000);
+  connect(beaconTimer,&QTimer::timeout,this,[this,beacon,clock,beaconEnable,beaconStatus] {
+    if(!beacon->enabled()) return;
+    auto message=JttyBeacon::message(m_config.my_callsign(),m_config.my_grid());
+    if(message.isEmpty()) {beaconEnable->setChecked(false);return;}
+    bool ready=!m_closing && m_mode=="JTTY" && m_monitoring && !m_diskData && !m_transmitting && !m_jttyTxActive && !m_tune
+      && m_config.rig_name()!="None" && m_config.is_transceiver_online()
+      && (m_tci_audio || (!m_config.audio_output_device().isNull() && !m_config.audio_input_device().isNull())) && m_jttyInputError.isEmpty();
+    if(beacon->poll(clock->elapsed(),ready)) {
+      // Beacon identity is uppercase, independent of the manual lower-case option.
+      QSignalBlocker guard(ui->cbLowerCase);
+      bool lower=ui->cbLowerCase->isChecked(); ui->cbLowerCase->setChecked(false);
+      submitJttyText(message); ui->cbLowerCase->setChecked(lower);
+    }
+    qint64 seconds=(beacon->remaining(clock->elapsed())+999)/1000;
+    beaconStatus->setText(tr("%1 · %2:%3%4").arg(message).arg(seconds/60).arg(seconds%60,2,10,QChar('0'))
+      .arg(ready ? QString{} : tr(" · waiting for idle CAT/audio/Monitor")));
+  }); beaconTimer->start();
 
   auto vertical = new QSplitter(Qt::Vertical, root);
   vertical->setObjectName("jttyVerticalSplitter");
@@ -369,24 +428,23 @@ void MainWindow::installJttyLayout() {
   auto timer = new QTimer(root); timer->setInterval(250);
   connect(timer,&QTimer::timeout,this,update); timer->start(); update();
   setCentralWidget(root);
-#ifndef Q_OS_WIN
+  QFont mono(jttyMonospaceFamily());
+  QFont decoded=ui->decodedTextBrowser->contentFont(); decoded.setFamily(mono.family()); decoded.setStyleHint(QFont::TypeWriter);
+  ui->decodedTextBrowser->setContentFont(decoded); ui->decodedTextBrowser2->setContentFont(decoded);
+  ui->Tx_Message->setFont(decoded);
   auto themes=ui->menuView->addMenu(tr("Themes"));
-  auto themeGroup=new QActionGroup(this);
-  themeGroup->setExclusive(true);
-  int const selectedTheme=m_settings->value("MainWindow/JttyAuroraTheme",false).toBool() ? 2 : (m_settings->value("MainWindow/JttyDarkTheme",false).toBool() ? 1 : 0);
-  for(int theme=0;theme<3;++theme) {
-    auto action=themes->addAction(theme==2 ? tr("Aurora") : (theme==1 ? tr("Dark") : tr("Light gray")));
-    action->setObjectName(theme==2 ? "jttyAuroraTheme" : (theme==1 ? "jttyDarkTheme" : "jttyLightTheme"));
-    action->setCheckable(true);themeGroup->addAction(action);
-    action->setChecked(theme==selectedTheme);
-    connect(action,&QAction::triggered,this,[this,theme] {
-      m_settings->setValue("MainWindow/JttyDarkTheme",theme!=0);
-      m_settings->setValue("MainWindow/JttyAuroraTheme",theme==2);
-      applyApplicationStyle(qApp->font(),theme!=0);
+  auto themeGroup=new QActionGroup(this); themeGroup->setExclusive(true);
+  bool green=m_settings->value("MainWindow/JttyGreenscreenTheme",false).toBool();
+  for(bool greenscreen : {false,true}) {
+    auto action=themes->addAction(greenscreen ? tr("Greenscreen") : tr("Default"));
+    action->setObjectName(greenscreen ? "jttyGreenscreenTheme" : "jttyDefaultTheme");
+    action->setCheckable(true); themeGroup->addAction(action); action->setChecked(greenscreen==green);
+    connect(action,&QAction::triggered,this,[this,greenscreen] {
+      m_settings->setValue("MainWindow/JttyGreenscreenTheme",greenscreen);
+      applyApplicationStyle(qApp->font(),true);
     });
   }
-#endif
-  applyApplicationStyle(qApp->font(),m_settings->value("MainWindow/JttyDarkTheme",false).toBool());
+  applyApplicationStyle(qApp->font(),true);
   auto fontMenu=ui->menuView->addMenu(tr("Message font size"));
   auto fontGroup=new QActionGroup(this);
   fontGroup->setObjectName("jttyFontSizes"); fontGroup->setExclusive(true);
@@ -485,32 +543,26 @@ bool MainWindow::jttyLayoutSmoke() {
        || ui->decodedTextBrowser->toPlainText()!=savedText) return false;
   }
   savedSize->trigger();
-  auto darkTheme=findChild<QAction*>("jttyDarkTheme");
-  auto lightTheme=findChild<QAction*>("jttyLightTheme");
+  auto defaultTheme=findChild<QAction*>("jttyDefaultTheme");
+  auto greenTheme=findChild<QAction*>("jttyGreenscreenTheme");
   auto controls=findChild<QPushButton*>("jttyWaterfallControls");
   auto checkbox=m_wideGraph->findChild<QCheckBox*>("cbControls");
   auto controlPanel=m_wideGraph->findChild<QWidget*>("controls_widget");
-  if(!controls || !checkbox || !controlPanel || !checkbox->isHidden()) return false;
-#ifdef Q_OS_WIN
-  if(darkTheme || lightTheme || findChild<QAction*>("jttyAuroraTheme")
-     || !qApp->styleSheet().contains("#262a30")
-     || QCoreApplication::instance()->property("jttyAuroraTheme").toBool()) return false;
-#else
-  if(!darkTheme || !lightTheme) return false;
-  bool savedDark=m_settings->value("MainWindow/JttyDarkTheme",false).toBool();
-  darkTheme->trigger();
-  if(!darkTheme->isChecked() || lightTheme->isChecked() || !qApp->styleSheet().contains("#262a30")) return false;
-  lightTheme->trigger();
-  if(!lightTheme->isChecked() || darkTheme->isChecked() || !qApp->styleSheet().contains("#d0d2d5")) return false;
-  auto auroraTheme=findChild<QAction*>("jttyAuroraTheme");
-  if(!auroraTheme) return false;
-  auroraTheme->trigger();
-  if(!auroraTheme->isChecked() || darkTheme->isChecked() || lightTheme->isChecked()
-     || !qApp->styleSheet().contains("#101e2b") || !qApp->styleSheet().contains("#31c5a4")) return false;
-  auto auroraPreview=qEnvironmentVariable("JTTY_UI_PREVIEW");
-  if(!auroraPreview.isEmpty()) grab().save(auroraPreview+".aurora.png");
-  (savedDark ? darkTheme : lightTheme)->trigger();
-#endif
+  if(!defaultTheme || !greenTheme || !controls || !checkbox || !controlPanel || !checkbox->isHidden()) return false;
+  bool savedGreen=m_settings->value("MainWindow/JttyGreenscreenTheme",false).toBool();
+  defaultTheme->trigger();
+  if(!defaultTheme->isChecked() || !qApp->styleSheet().contains("#262a30")) return false;
+  greenTheme->trigger();
+  if(!greenTheme->isChecked() || defaultTheme->isChecked() || !qApp->styleSheet().contains("#80ff80")) return false;
+  auto greenPreview=qEnvironmentVariable("JTTY_UI_PREVIEW");
+  if(!greenPreview.isEmpty()) grab().save(greenPreview+".greenscreen.png");
+  (savedGreen ? greenTheme : defaultTheme)->trigger();
+  auto beaconEnable=findChild<QCheckBox*>("jttyBeaconEnable");
+  auto interval=findChild<QComboBox*>("jttyBeaconInterval");
+  if(!JttyBeacon::smoke() || !beaconEnable || beaconEnable->isChecked() || !interval || interval->count()!=12) return false;
+  for(int i=0;i<12;++i) if(interval->itemData(i).toInt()!=(i+1)*5) return false;
+  if(qApp->font().family()!=jttyMonospaceFamily() || !QFontInfo(ui->monitorButton->font()).fixedPitch()
+     || !QFontInfo(ui->decodedTextBrowser->contentFont()).fixedPitch()) return false;
   bool savedControls=controls->isChecked();
   controls->setChecked(true);
   if(!checkbox->isChecked() || controlPanel->isHidden()) return false;

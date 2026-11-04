@@ -10,15 +10,15 @@ Aurora JTTY is an independent JTTY-only amateur-radio text client based on WSJT-
 
 ## Download and install
 
-[macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.1) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.1/Aurora-JTTY-1.1-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
+[macOS release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.3) · [Apple Silicon DMG](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.3/Aurora-JTTY-1.3-macOS-arm64.dmg) · [Installation instructions](docs/MACOS-INSTALL.md)
 
 The current release is an unsigned Apple Silicon developer build requiring compatible Homebrew libraries. It is not a standalone or notarized installer. The release includes a checksum, corresponding source archive and legal notices.
 
-[Experimental Windows 1.2 x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.2-windows-preview) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.2-windows-preview/Aurora-JTTY-1.2-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
+[Experimental Windows 1.3 x64 release](https://github.com/N4EAC/Aurora-JTTY/releases/tag/v1.3) · [Windows installer](https://github.com/N4EAC/Aurora-JTTY/releases/download/v1.3/Aurora-JTTY-1.3-windows-x64-setup.exe) · [Windows installation instructions](docs/WINDOWS-INSTALL.md)
 
 **The Windows version is experimental.** It includes its runtime dependencies and is unsigned. Native Windows startup and installation are checked automatically; radio USB audio and CAT/PTT require testing with your station. Complete application and dependency source packages accompany the release.
 
-Version 1.1 fixes transmitted-message text contrast: black text on the yellow highlight remains readable across themes. Windows 1.2 also includes the later Tx/Last Tx status and JTTY audio-progress fixes, with a brief full-bar completion indication and Dark as its only theme.
+Version 1.3 adds an optional interval beacon, monospace fonts, and Default/Greenscreen themes on macOS and Windows.
 
 ## Using Aurora JTTY
 
@@ -30,7 +30,13 @@ Configure your callsign, grid, radio, CAT serial port and USB audio input/output
 - **Conversation** follows the selected receive offset and tolerance. It can open in a dedicated window.
 - Type in **Message** and use Enter or **Send message** to transmit. F1–F8 invoke editable macros. **Halt Tx** stops transmission.
 - The waterfall selects the receive offset. Use **Copy Rx → Tx** or **Copy Tx → Rx** to match offsets.
-- **View → Themes** selects Light gray, Dark or Aurora on macOS. Windows uses a fixed Dark theme. **Message font size** sets message text to 8–17 pt.
+- **View → Themes** selects Default or Greenscreen on either platform. The interface uses monospace fonts. **Message font size** sets message text to 8–17 pt.
+
+## Beacon
+
+Set your callsign and grid in **Radio / Audio**, connect CAT and select USB audio, then start **Monitor**. Select a beacon interval from **5 to 60 minutes in 5-minute increments** and check **Enable beacon**. It transmits `CALL BEACON GRID` using your configured identity and the current dial/Tx offset. The first beacon waits one full interval. Changing the interval restarts the countdown.
+
+Beacon starts disabled on every launch. Busy transmissions, Tune, disconnected CAT, unavailable output audio, and stopped/error input monitoring cause an interval to be skipped; skipped beacons are not queued. **Halt Tx** also disables future beacons. Unchecking Enable beacon stops future scheduled sends; Halt Tx stops an active transmission. Keep automatic transmissions enabled only when appropriate for your station and frequency.
 
 ## Build from source
 

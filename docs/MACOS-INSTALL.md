@@ -1,4 +1,4 @@
-# Aurora JTTY 1.1 — macOS Apple Silicon developer build
+# Aurora JTTY 1.3 — macOS Apple Silicon developer build
 
 This DMG contains the current arm64 application, source snapshot and legal notices. It is not a standalone or notarized public installer and does not support Intel Macs. Keep the included source archive with any redistribution.
 
@@ -17,3 +17,5 @@ Select your radio, CAT port, USB input and USB output in Radio / Audio. The exis
 See THIRD_PARTY_NOTICES.md, COPYING and PUBLICATION-REQUIREMENTS.md for software copyright, dependency obligations and release requirements. The corresponding source archive contains the pinned upstream source, Aurora modifications and build scripts; build instructions are in its README.md. External dependencies remain separately installed and their binaries are not bundled.
 
 The source snapshot omits unrelated mode sample recordings, QDarkStyle demonstration screenshots and unused upstream Windows binaries; build source and JTTY samples are retained. The full unchanged upstream checkout remains available at the pinned commit identified in README.md.
+
+Version 1.3 uses monospace fonts and offers Default and Greenscreen in View → Themes. The optional beacon transmits CALL BEACON GRID at 5–60 minute intervals (5-minute steps). It starts disabled each launch; see the README for setup and operating behavior.
