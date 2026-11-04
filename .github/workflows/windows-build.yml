@@ -45,11 +45,11 @@ jobs:
           path: |
             build/hamlib-prefix
             build/hamlib-src
-          key: aurora-hamlib-4.7.2-windows-2022-v1
+          key: aurora-hamlib-4.7.2-windows-2022-v2
       - name: Build Hamlib
         if: steps.hamlib-cache.outputs.cache-hit != 'true'
         run: |
-          bash upstream/wsjtx/.github/scripts/build-hamlib-windows.sh 4.7.2 "$(pwd)/build/hamlib-prefix"
+          bash scripts/build-hamlib-windows.sh 4.7.2 "$(pwd)/build/hamlib-prefix"
           mv hamlib-src build/hamlib-src
       - name: Save Hamlib cache
         if: steps.hamlib-cache.outputs.cache-hit != 'true'
@@ -58,7 +58,7 @@ jobs:
           path: |
             build/hamlib-prefix
             build/hamlib-src
-          key: aurora-hamlib-4.7.2-windows-2022-v1
+          key: aurora-hamlib-4.7.2-windows-2022-v2
       - name: Restore compiled application
         id: app-cache
         uses: actions/cache/restore@v4

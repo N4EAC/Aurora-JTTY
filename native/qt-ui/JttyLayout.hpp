@@ -263,6 +263,24 @@ void MainWindow::installJttyLayout() {
   auto draftLabel = new QHBoxLayout;
   draftLabel->addWidget(label(tr("Message"), conversation));
   draftLabel->addStretch();
+  draftLabel->addWidget(label(tr("Message style"),conversation));
+  auto messageStyle=new QComboBox(conversation);
+  messageStyle->setObjectName("jttyMessageStyle");
+  messageStyle->addItems({tr("Direct"),tr("Buffered"),tr("Type ahead")});
+  int savedStyle=qBound(0,m_settings->value("MainWindow/JttyMessageStyle",2).toInt(),2);
+  messageStyle->setCurrentIndex(savedStyle); setProperty("jttyMessageStyle",savedStyle);
+  ui->pbSendMessage->setText(savedStyle ? tr("Go") : tr("Send message"));
+  ui->Tx_Message->setPlaceholderText(savedStyle ? tr("Compose a message, then press Go") : tr("Type a JTTY message — Enter to send"));
+  ui->pbSendMessage->setToolTip(tr("Transmit the composed message. Buffered and Type ahead modes send only when Go is clicked."));
+  connect(messageStyle,QOverload<int>::of(&QComboBox::currentIndexChanged),this,[this](int style) {
+    setProperty("jttyMessageStyle",style); m_settings->setValue("MainWindow/JttyMessageStyle",style);
+    ui->pbSendMessage->setText(style ? tr("Go") : tr("Send message"));
+    ui->Tx_Message->setPlaceholderText(style ? tr("Compose a message, then press Go") : tr("Type a JTTY message — Enter to send"));
+  });
+  messageStyle->setToolTip(tr("Direct: function keys transmit immediately. Buffered: function keys replace the draft. Type ahead: insert a macro at the cursor and keep typing. Buffered/Type ahead require Go."));
+  draftLabel->addWidget(messageStyle);
+  if(ui->msg5->text().trimmed()=="%H") ui->msg5->setText("%H DE %M");
+  ui->pbF5->setToolTip(tr("Load/send Their call DE My call when using the default F5 template."));
   auto counter = label(QString{}, conversation);
   counter->setObjectName("jttyDraftCount");
   draftLabel->addWidget(counter);
@@ -662,16 +680,30 @@ qint64 MainWindow::jttyLayoutSubmitFixture(QString message,bool macro) {
   qint64 id=-1; int accepted=0;
   auto connection=connect(this,&MainWindow::jttyTextAccepted,this,[&](qint64 request){id=request;++accepted;});
   if(!floating->isVisible()) popout->click();
+  auto styles=findChild<QComboBox*>("jttyMessageStyle");
+  int savedStyle=styles->currentIndex();
   if(macro) {
+    styles->setCurrentIndex(0);
     auto saved=ui->msg1->text(); ui->msg1->setText(message);
     QKeyEvent key(QEvent::KeyPress,Qt::Key_F1,Qt::NoModifier);
     QApplication::sendEvent(ui->Tx_Message,&key);
     ui->msg1->setText(saved);
   } else {
-    ui->Tx_Message->setText(message);
-    QKeyEvent key(QEvent::KeyPress,Qt::Key_Return,Qt::NoModifier);
-    QApplication::sendEvent(ui->Tx_Message,&key);
+    styles->setCurrentIndex(2);
+    auto saved=ui->msg1->text();
+    int split=message.indexOf(' '); if(split<0) split=message.size();
+    ui->msg1->setText(message.left(split)); ui->Tx_Message->clear();
+    QKeyEvent macroKey(QEvent::KeyPress,Qt::Key_F1,Qt::NoModifier);
+    QApplication::sendEvent(ui->Tx_Message,&macroKey);
+    bool buffered=accepted==0 && ui->Tx_Message->text().trimmed()==message.left(split);
+    ui->Tx_Message->insert(message.mid(split).trimmed());
+    QKeyEvent enter(QEvent::KeyPress,Qt::Key_Return,Qt::NoModifier);
+    QApplication::sendEvent(ui->Tx_Message,&enter);
+    buffered=buffered && accepted==0 && ui->Tx_Message->text().trimmed()==message;
+    if(buffered) ui->pbSendMessage->click();
+    ui->msg1->setText(saved);
   }
+  styles->setCurrentIndex(savedStyle);
   disconnect(connection);
   floating->close();
   return accepted==1 ? id : -1;

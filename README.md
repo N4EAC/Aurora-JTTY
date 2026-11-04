@@ -28,7 +28,7 @@ Configure your callsign, grid, radio, CAT serial port and USB audio input/output
 
 - **All Messages** shows decoded signals across the waterfall range, with frequency and estimated SNR.
 - **Conversation** follows the selected receive offset and tolerance. It can open in a dedicated window.
-- Type in **Message** and use Enter or **Send message** to transmit. F1–F8 invoke editable macros. **Halt Tx** stops transmission.
+- **Message style → Type ahead** inserts an expanded F1–F8 macro at the cursor so you can keep typing, then press **Go**. Default F5 is `%H DE %M` (Their call DE My call); existing custom F5 templates are preserved. **Buffered** replaces the draft with the macro instead. Enter only focuses Go in these modes; it does not submit the draft. **Direct** retains immediate function-key transmission and Enter-to-send. **Halt Tx** stops transmission.
 - The waterfall selects the receive offset. Use **Copy Rx → Tx** or **Copy Tx → Rx** to match offsets.
 - **View → Themes** selects Default or Greenscreen on either platform. The interface uses monospace fonts. **Message font size** sets message text to 8–17 pt.
 

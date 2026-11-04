@@ -36,3 +36,5 @@ For a local MSYS2 MINGW64 environment with those dependencies installed, build H
 The workflow verifies both the portable executable and the installed executable without the development DLL search paths. Test physical CAT/PTT and audio separately on Windows 10/11 x64 before treating this preview as a validated station release.
 
 The Windows workflow pins the official signed MINGW64 libusb 1.0.30 package because it is no longer listed in the rolling repository database. Its matching source package is still collected with the other dependency sources.
+
+The maintained Hamlib Windows build script supplies the standard assertion header to Hamlib 4.7.2 when compiling with current MinGW GCC. It otherwise retains the upstream configure options and source checkout.

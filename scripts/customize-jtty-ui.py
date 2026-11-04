@@ -316,3 +316,24 @@ edit('JttyTxLoopbackTestController.cpp', '  bool lastMessageVisible = false;', '
     return;
   }
   bool lastMessageVisible = false;''')
+
+# Buffered function keys never key the transmitter. Go uses the normal draft path.
+edit('widgets/mainwindow_jtty.cpp', '  if(compiled.status == Jtty::NativeMacroStatus::LiteralFallback) {', '''  if(property("jttyMessageStyle").toInt()>0 && compiled.status != Jtty::NativeMacroStatus::InvalidRuntime) {
+    QString text=compiled.text.trimmed();
+    bool replace=property("jttyMessageStyle").toInt()==1;
+    if(text.isEmpty()) return true;
+    QString insertion=text+" ";
+    int cursor=ui->Tx_Message->cursorPosition();
+    if(!replace && cursor>0 && !ui->Tx_Message->text().at(cursor-1).isSpace()) insertion.prepend(' ');
+    int retained=replace ? 0 : ui->Tx_Message->text().size()-ui->Tx_Message->selectedText().size();
+    if(retained+insertion.size() > ui->Tx_Message->maxLength()) {
+      ui->Tx_Message->setToolTip(tr("Macro would exceed the 80-character draft limit. Shorten the draft first."));
+      ui->Tx_Message->setFocus(); return true;
+    }
+    if(replace) ui->Tx_Message->selectAll();
+    ui->Tx_Message->setToolTip(QString{});
+    ui->Tx_Message->insert(insertion); ui->Tx_Message->setFocus();
+    return true;
+  }
+  if(compiled.status == Jtty::NativeMacroStatus::LiteralFallback) {''')
+edit('widgets/mainwindow_slots.cpp', 'void MainWindow::on_Tx_Message_returnPressed()\n{', 'void MainWindow::on_Tx_Message_returnPressed()\n{\n  if(property("jttyMessageStyle").toInt()>0) { ui->pbSendMessage->setFocus(); return; }')
