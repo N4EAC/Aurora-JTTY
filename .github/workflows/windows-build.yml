@@ -32,8 +32,12 @@ jobs:
             mingw-w64-x86_64-qt5-serialport mingw-w64-x86_64-qt5-svg
             mingw-w64-x86_64-qt5-tools mingw-w64-x86_64-qt5-websockets
             mingw-w64-x86_64-qt5-activeqt mingw-w64-x86_64-fftw
-            mingw-w64-x86_64-libusb mingw-w64-x86_64-portaudio
+            mingw-w64-x86_64-portaudio
             mingw-w64-x86_64-pkg-config mingw-w64-x86_64-nsis
+      - name: Install pinned libusb package
+        # This signed package remains on the official mirror but is no longer
+        # listed in the rolling MINGW64 repository database.
+        run: pacman --noconfirm -U https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-libusb-1.0.30-1-any.pkg.tar.zst
       - name: Cache Hamlib build
         id: hamlib-cache
         uses: actions/cache/restore@v4

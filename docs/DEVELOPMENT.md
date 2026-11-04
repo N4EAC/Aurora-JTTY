@@ -34,3 +34,5 @@ Run the **Build Aurora JTTY Windows** workflow from GitHub Actions. It uses a Wi
 For a local MSYS2 MINGW64 environment with those dependencies installed, build Hamlib into `build/hamlib-prefix`, retain its source in `build/hamlib-src`, then run `bash scripts/build-windows-jtty.sh` and `python scripts/package-windows-jtty.py`. Run `scripts/test-windows-startup.ps1` from PowerShell and `makensis scripts/windows-installer.nsi` from MINGW64. Packaging collects runtime DLLs, notices and matching dependency source packages; keep these source packages available when distributing binaries.
 
 The workflow verifies both the portable executable and the installed executable without the development DLL search paths. Test physical CAT/PTT and audio separately on Windows 10/11 x64 before treating this preview as a validated station release.
+
+The Windows workflow pins the official signed MINGW64 libusb 1.0.30 package because it is no longer listed in the rolling repository database. Its matching source package is still collected with the other dependency sources.
